@@ -16,11 +16,15 @@ from orbitalTransforms import GLLH2ECEF
 from orbitalTransforms import ECEF2ECI
 from orbitalTransforms import CART2POLAR
 from orbitalTransforms import POLAR2CART
+from satellite import Satellite
 R = 6378137
 
-class magnetometer:
-    def __init__(self, epochTime):
+
+np.random.seed(4)
+class Magnetometer:
+    def __init__(self, epochTime, accuracy):
         self.epochTime = epochTime
+        self.accuracy  = accuracy
         return
     
     def getActualField(self, date, satPos):
@@ -45,7 +49,7 @@ class magnetometer:
         phi     =   satPos[1]
         r       =   (R + satPosLLH[2])/1000
 
-        Br, Btheta, Bphi = ppigrf.igrf_gc(r, theta, phi, date) # returns radial, south, east
+        Br, Btheta, Bphi = ppigrf.igrf_gc(r, theta, phi, date) # returns radial, south, east (R, lat long)
         bFieldLLH  = np.array([Btheta, Bphi, Br - R])
         bFieldECEF = GLLH2ECEF(bFieldLLH)
         bFieldECI  = ECEF2ECI(bFieldECEF, seconds_difference)
@@ -67,9 +71,9 @@ class magnetometer:
         theta = satAttitude[1]
         phi = satAttitude[2]
 
-        C = np.array([np.cos(theta)*np.cos(psi), np.cos(theta)*np.sin(psi), -np.sin(theta)],
+        C = np.array([[np.cos(theta)*np.cos(psi), np.cos(theta)*np.sin(psi), -np.sin(theta)],
                      [np.sin(phi)*np.sin(theta)*np.cos(psi) - np.cos(phi)*np.sin(psi), np.sin(phi)*np.sin(theta)*np.sin(psi) + np.cos(phi)*np.cos(psi), np.sin(phi)*np.cos(theta)],
-                     [np.cos(phi)*np.sin(theta)*np.cos(psi) + np.sin(phi)*np.sin(psi), np.cos(phi)*np.sin(theta)*np.sin(psi)- np.sin(phi)*np.cos(psi), np.cos(phi)*np.cos(theta)])
+                     [np.cos(phi)*np.sin(theta)*np.cos(psi) + np.sin(phi)*np.sin(psi), np.cos(phi)*np.sin(theta)*np.sin(psi)- np.sin(phi)*np.cos(psi), np.cos(phi)*np.cos(theta)]])
         
 
         bFieldECI  = self.getActualField(date, satPos)
@@ -77,15 +81,27 @@ class magnetometer:
         bFieldBody = C @ bFieldECI
         bFieldBodyPolar = CART2POLAR(bFieldBody)
 
-        el = bFieldBodyPolar[0]
-        az = bFieldBodyPolar[1]
+        #Add Gausian noise
+        el = np.random.normal(bFieldBodyPolar[0], self.accuracy)
+        az = np.random.normal(bFieldBodyPolar[1], self.accuracy)
         R  = bFieldBodyPolar[2]
 
         #Convert back to cartesian in the body frame of the satellite
         bFieldBodyPolar =  np.array([el,az,R])
         bFieldBody  =  POLAR2CART(bFieldBodyPolar)
-
         #Convert to ECI
         bFieldReading     =  C @ bFieldBody
 
         return bFieldReading
+
+if __name__ == "__main__":
+
+    satellite = Satellite("ISS.txt")
+    J2000 = datetime(2000, 1, 1, 12)
+    mg = Magnetometer(J2000, 0.5)
+
+    pitch = np.arctan2(satellite.X[1], satellite.X[2])
+    yaw   = np.arctan2(satellite.X[0], satellite.X[1])
+    roll = np.arctan2(np.sin(pitch)*np.cos(yaw), np.cos(pitch)*np.cos(yaw))
+    satAttitude = np.array([yaw,pitch,roll])
+    print(mg.getReading(J2000, satellite.X, satAttitude))

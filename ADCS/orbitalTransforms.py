@@ -31,9 +31,9 @@ def ECI2ECEF(X, t):
      3x1 vector representing the position of the satellite in geodetic LLH 
 """
 def ECEF2GLLH(X):
-    x       =   X[0][0]
-    y       =   X[1][0]
-    z       =   X[2][0]
+    x       =   X[0]
+    y       =   X[1]
+    z       =   X[2]
 
     e2      =   0.00669437999
     a       =   6378137
@@ -114,9 +114,9 @@ def PFF2ECEF(X,V,O,w,i):
 """
 
 def CART2POLAR(X):
-    x     =   X[0][0]
-    y     =   X[1][0]
-    z     =   X[2][0]
+    x     =   X[0]
+    y     =   X[1]
+    z     =   X[2]
     R     =   np.sqrt(x**2 + y**2 + z**2)
 
     el    =   np.arcsin(z/R)
@@ -136,9 +136,9 @@ def CART2POLAR(X):
 
 """
 def POLAR2CART(X):
-     el    =    X[0][0]
-     az    =    X[1][0]
-     r     =    X[2][0] 
+     el    =    X[0]
+     az    =    X[1]
+     r     =    X[2]
 
      az    =    np.deg2rad(az)
      el    =    np.deg2rad(el)
@@ -147,7 +147,7 @@ def POLAR2CART(X):
      y     =    r * np.sin(az)*np.cos(el)
      z     =    r * np.sin(el)
 
-     return np.array([[x],[y],[z]])
+     return np.array([x,y,z])
 
 
 def ECEF2LGDV(X, ref):

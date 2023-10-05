@@ -50,8 +50,10 @@ class Magnetometer:
         r       =   (R + satPosLLH[2])/1000
 
         Br, Btheta, Bphi = ppigrf.igrf_gc(r, theta, phi, date) # returns radial, south, east (R, lat long)
-        bFieldLLH  = np.array([Btheta, Bphi, Br - R])
+        
+        bFieldLLH  = np.array([Btheta[0], Bphi[0], Br[0] - R])
         bFieldECEF = GLLH2ECEF(bFieldLLH)
+        
         bFieldECI  = ECEF2ECI(bFieldECEF, seconds_difference)
         
         return bFieldECI
@@ -77,10 +79,12 @@ class Magnetometer:
         
 
         bFieldECI  = self.getActualField(date, satPos)
+        
         #Get the magnetic field in the body frame
         bFieldBody = C @ bFieldECI
+        
         bFieldBodyPolar = CART2POLAR(bFieldBody)
-
+        
         #Add Gausian noise
         el = np.random.normal(bFieldBodyPolar[0], self.accuracy)
         az = np.random.normal(bFieldBodyPolar[1], self.accuracy)
@@ -88,7 +92,9 @@ class Magnetometer:
 
         #Convert back to cartesian in the body frame of the satellite
         bFieldBodyPolar =  np.array([el,az,R])
+        
         bFieldBody  =  POLAR2CART(bFieldBodyPolar)
+        
         #Convert to ECI
         bFieldReading     =  C @ bFieldBody
 

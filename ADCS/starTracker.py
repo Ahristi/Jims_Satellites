@@ -1,5 +1,6 @@
 import csv
 import numpy as np
+from orbitalTransforms import GLLH2ECEF
 
 """
     starTracker
@@ -59,7 +60,7 @@ class starTracker:
             Inputs:
 
             starName    - the name of the star to use in the comparison
-            satpos      - numpy array of the satellite coordinate in ECEF     
+            satpos      - numpy array of the satellite coordinate in ECI     
             satAttitude - the actual attitude of the satellite in heading, pitch, roll
         """
         #Get the true vector between the satellite and the star:
@@ -69,12 +70,12 @@ class starTracker:
         theta = satAttitude[1]
         phi = satAttitude[2]
 
-        R = np.array([np.cos(theta)*np.cos(psi), np.cos(theta)*np.sin(psi), -np.sin(theta)],
+        C = np.array([np.cos(theta)*np.cos(psi), np.cos(theta)*np.sin(psi), -np.sin(theta)],
                      [np.sin(phi)*np.sin(theta)*np.cos(psi) - np.cos(phi)*np.sin(psi), np.sin(phi)*np.sin(theta)*np.sin(psi) + np.cos(phi)*np.cos(psi), np.sin(phi)*np.cos(theta)],
                      [np.cos(phi)*np.sin(theta)*np.cos(psi) + np.sin(phi)*np.sin(psi), np.cos(phi)*np.sin(theta)*np.sin(psi)- np.sin(phi)*np.cos(psi), np.cos(phi)*np.cos(theta)])
         
         #Get the coordinate of the star in the satellite body frame in polar form
-        starInBody = R.T @ starFromSat
+        starInBody = C.T @ starFromSat
         inBodyPolar = CART2POLAR(starInBody)
         el = inBodyPolar[0]
         az = inBodyPolar[1]
@@ -88,8 +89,8 @@ class starTracker:
         inBodyPolar =  np.array([el,az,R])
         starInBody  =  POLAR2CART(inBodyPolar)
 
-        #Convert to ECEF
-        starPos     =  R @ starInBody + satPos
+        #Convert to ECI
+        starPos     =  C @ starInBody + satPos
 
         return starPos
 
@@ -137,5 +138,17 @@ def POLAR2CART(X):
 
 
 if __name__ == "__main__":
-    cross = starTracker("star_config.csv" ,0.0154)
-    print(cross.getReading("kamino"))
+    #cross = starTracker("star_config.csv" ,0.0154)
+    #Rigil Kentauras
+    # RA = 14h 39m 36.5s, Dec = -60° 50' 02"
+    # 210.660139 long
+    # 60.833889  lat
+    # 4.37ly =  
+
+    long = 210.660139
+    lat  = 60.833889
+    r = 4.1343e+16
+    kentauras = GLLH2ECEF(np.array([lat,long,r]))
+    print(kentauras)
+
+

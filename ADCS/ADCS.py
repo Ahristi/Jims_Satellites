@@ -9,6 +9,7 @@
 
 class ADCS:
     def __init__(self):
-        return
+        self.magnetometer = None
+        
     
 

@@ -80,6 +80,28 @@ def GLLH2ECEF(X):
 
 
 
+def PFF2ECEF(X,V,O,w,i):
+    """
+        Converts satellite state from 2D perifocal frame to ECEF
+
+        Inputs:
+        X: Position vector of the satellite in perifocal frame
+        V: Velocity vector of the satellite in perifocal frame
+        O: Right ascension of ascending node
+        w: Argument of perigee
+        i: Inclination
+    """
+    C = np.array(
+            [   
+                [-np.sin(O)*np.cos(i)*np.sin(w) + np.cos(O)*np.cos(w), -np.sin(O)*np.cos(i)*np.cos(w) - np.cos(O)*np.sin(w), np.sin(O)*np.sin(i)],
+                [np.cos(O)*np.cos(i)*np.sin(w) + np.sin(O)*np.cos(w), np.cos(O)*np.cos(i)*np.cos(w) - np.sin(O)*np.sin(w), np.cos(O)*np.sin(i)],
+                [np.sin(i)*np.sin(w),                          np.sin(i)*np.cos(w),                      np.cos(i)      ]
+            ])
+    X_ECEF=  np.matmul(C,X)
+    V_ECEF=  np.matmul(C,V)
+    return X_ECEF, V_ECEF
+
+
 """
      ECEF2POLAR
 

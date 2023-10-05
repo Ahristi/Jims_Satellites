@@ -1,6 +1,8 @@
 import csv
 import numpy as np
 from orbitalTransforms import GLLH2ECEF
+from Satellite import Satellite
+
 
 """
     starTracker
@@ -13,7 +15,7 @@ from orbitalTransforms import GLLH2ECEF
 class starTracker:
     def __init__(self, starFile, accuracy):
         self.stars    =  self.initialiseStars(starFile)
-        self.accuracy =  accuracy
+        self.accuracy =  np.deg2rad(accuracy)
 
     def initialiseStars(self, starFile):
         """
@@ -37,6 +39,7 @@ class starTracker:
                     star_x = float(row[1])
                     star_y = float(row[2]) 
                     star_z = float(row[3])
+        
                     
                     # Create a dictionary entry with star name as key and coordinates as value
                     starData[star_name] = np.array([star_x, star_y, star_z])
@@ -66,13 +69,13 @@ class starTracker:
         #Get the true vector between the satellite and the star:
         starFromSat = self.stars[starName] - satPos
         #Calculate directional cosine matrix
-        psi = satAttitude[0]
+        psi   = satAttitude[0]
         theta = satAttitude[1]
-        phi = satAttitude[2]
+        phi   = satAttitude[2]
 
-        C = np.array([np.cos(theta)*np.cos(psi), np.cos(theta)*np.sin(psi), -np.sin(theta)],
+        C = np.array([[np.cos(theta)*np.cos(psi), np.cos(theta)*np.sin(psi), -np.sin(theta)],
                      [np.sin(phi)*np.sin(theta)*np.cos(psi) - np.cos(phi)*np.sin(psi), np.sin(phi)*np.sin(theta)*np.sin(psi) + np.cos(phi)*np.cos(psi), np.sin(phi)*np.cos(theta)],
-                     [np.cos(phi)*np.sin(theta)*np.cos(psi) + np.sin(phi)*np.sin(psi), np.cos(phi)*np.sin(theta)*np.sin(psi)- np.sin(phi)*np.cos(psi), np.cos(phi)*np.cos(theta)])
+                     [np.cos(phi)*np.sin(theta)*np.cos(psi) + np.sin(phi)*np.sin(psi), np.cos(phi)*np.sin(theta)*np.sin(psi)- np.sin(phi)*np.cos(psi), np.cos(phi)*np.cos(theta)]])
         
         #Get the coordinate of the star in the satellite body frame in polar form
         starInBody = C.T @ starFromSat
@@ -128,8 +131,7 @@ def POLAR2CART(X):
     el    =    X[0]
     az    =    X[1]
     r     =    X[2]
-    az    =    np.deg2rad(az)
-    el    =    np.deg2rad(el)
+
     x     =    r * np.cos(az)*np.cos(el)
     y     =    r * np.sin(az)*np.cos(el)
     z     =    r * np.sin(el)
@@ -138,7 +140,7 @@ def POLAR2CART(X):
 
 
 if __name__ == "__main__":
-    #cross = starTracker("star_config.csv" ,0.0154)
+    cross = starTracker("star_config.csv" ,0.0154)
     #Rigil Kentauras
     # RA = 14h 39m 36.5s, Dec = -60° 50' 02"
     # 210.660139 long
@@ -149,6 +151,14 @@ if __name__ == "__main__":
     lat  = 60.833889
     r = 4.1343e+16
     kentauras = GLLH2ECEF(np.array([lat,long,r]))
+
+    satellite = Satellite("ISS.txt")
+
+    pitch = np.arctan2(satellite.X[1], satellite.X[2])
+    yaw   = np.arctan2(satellite.X[0], satellite.X[1])
+    roll = np.arctan2(np.sin(pitch)*np.cos(yaw), np.cos(pitch)*np.cos(yaw))
+
+    satAttitude = np.array([yaw,pitch,roll])
+    reading = cross.getReading("kentauras", satellite.X, satAttitude)
     print(kentauras)
-
-
+    print(reading)

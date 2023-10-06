@@ -116,7 +116,7 @@ class ADCS:
         delta_x = np.array([1,1,1])
     
         max_iter = 300
-        tol = 1e-16
+        tol = 1e-8
         iter_count = 0
 
         #For now just assume only sensors are magnetometer and startracker
@@ -275,9 +275,9 @@ def jacobianDCMINV(yaw, pitch, roll, obs):
     
 
 if __name__ == "__main__": 
-    cross = starTracker("star_config.csv", 0.0)
+    cross = starTracker("star_config.csv", 0.154)
     J2000 = datetime(2000, 1, 1, 12)
-    mg = Magnetometer(J2000,0)
+    mg = Magnetometer(J2000,0.5)
     adcs = ADCS(mg,cross)
 
     sat = Satellite("ISS.txt", J2000, adcs)

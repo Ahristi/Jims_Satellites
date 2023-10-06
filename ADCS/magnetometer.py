@@ -88,8 +88,8 @@ class Magnetometer:
         bFieldBodyPolar = CART2POLAR(bFieldBody)
         
         #Add Gausian noise
-        el = np.random.normal(bFieldBodyPolar[0], self.accuracy)
-        az = np.random.normal(bFieldBodyPolar[1], self.accuracy)
+        el = np.random.normal(bFieldBodyPolar[0], np.deg2rad(self.accuracy))
+        az = np.random.normal(bFieldBodyPolar[1], np.deg2rad(self.accuracy))
         R  = bFieldBodyPolar[2]
 
         #Convert back to cartesian in the body frame of the satellite

@@ -33,7 +33,7 @@ class ADCS:
         guess = np.array([0.0,0.0,0.0])
         delta_x = np.array([100,100,100])
 
-        max_iter = 100
+        max_iter = 200
         tol = 1e-8
         iter_count = 0
 
@@ -44,18 +44,19 @@ class ADCS:
         H = np.zeros((3 * len(allSensors), 3))
 
         delta_y = np.zeros((3 *  len(allSensors), 1))
+        starName = "kentauras"
+        actualAttitude = self.satellite.attitude
+        startrackReading = self.starTracker.getReading(starName, self.satellite.X, actualAttitude)
+        magnetReading = self.magnetometer.getReading(self.satellite.time, self.satellite.X, actualAttitude)
+
+
         while np.linalg.norm(delta_x) > tol:
-            starName = "kentauras"
+            
             # Build H matrix
             psi   = guess[0]
             theta = guess[1]
             phi  = guess[2]
             
-            actualAttitude = self.satellite.attitude
-            startrackReading = self.starTracker.getReading(starName, self.satellite.X, actualAttitude)
-            magnetReading = self.magnetometer.getReading(self.satellite.time, self.satellite.X, actualAttitude)
-
-
 
             H_starTracker   =   jacobianDCM(psi,theta,phi, startrackReading)
             H_magnet        =   jacobianDCM(psi,theta,phi, magnetReading)
@@ -79,7 +80,8 @@ class ADCS:
             delta_y[0:3, 0] = (self.starTracker.getActualReading(starName, self.satellite.X) - C @ startrackReading)
             delta_y[3:6, 0] = (self.magnetometer.getActualReading(self.satellite.time, self.satellite.X) - C @ magnetReading)
 
-
+            print(delta_y)
+            
             # Use non-linear least squares to estimate error in x
             delta_x = np.linalg.inv(H.T @ H) @ H.T @ delta_y
 
@@ -122,13 +124,13 @@ def jacobianDCM(yaw,pitch,roll, obs):
     phi     =  roll  
 
     
-    dxdpsi      =   -xb * np.cos(theta) * np.sin(psi) + yb * (-np.sin(phi) * np.sin(theta) * np. sin(phi) - np.cos(phi) * np.cos(psi)) + zb * (-np.cos(phi) * np.sin(theta) * np.sin(psi) + np.sin(theta) * np.cos(psi))
+    dxdpsi      =   -xb * np.cos(theta) * np.sin(psi) + yb * (-np.sin(phi) * np.sin(theta) * np. sin(psi) - np.cos(phi) * np.cos(psi)) + zb * (-np.cos(phi) * np.sin(theta) * np.sin(psi) + np.sin(theta) * np.cos(psi))
     dxdtheta    =   -xb*np.sin(theta) * np.cos(psi)   + yb * np.sin(phi) * np.cos(theta) * np.cos(psi)+ zb * np.cos(phi) * np.cos(theta) * np.cos(psi)
     dxdphi      =    yb*(np.cos(phi) * np.sin(theta) * np.cos(psi) + np.sin(phi) * np.sin(psi)) + zb* (-np.sin(phi) * np.sin(theta)*np.cos(psi) + np.cos(phi) * np.sin(psi))
     
     dydpsi      =   xb*np.cos(theta) * np.cos(psi) + yb*(np.sin(phi) * np.sin(theta) * np.cos(psi) - np.cos(phi) * np.sin(psi)) + zb * (np.cos(phi) * np.sin(theta) * np.cos(psi) + np.sin(phi) * np.sin(psi))
     dydtheta    =   -xb * np.sin(theta) * np.sin(psi) + yb * np.sin(phi) * np.cos(theta) * np.sin(psi) + zb* np.cos(phi) * np.cos(theta) * np.sin(psi)
-    dydphi      =   yb*(np.cos(phi) * np.sin(theta) * np.sin(psi) - np.sin(phi) * np.cos(psi)) + zb* (-np.sin(phi) * np. sin(theta) * np.sin(psi) - np.cos(phi) * np.cos(psi))
+    dydphi      =   yb*(np.cos(phi) * np.sin(theta) * np.sin(psi) - np.sin(phi) * np.cos(psi)) + zb* (-np.sin(phi) * np.sin(theta) * np.sin(psi) - np.cos(phi) * np.cos(psi))
 
     dzdpsi      =   0
     dzdtheta    =   -xb*np.cos(theta) - yb* np.sin(phi) * np.sin(theta) - zb * np.cos(phi) * np.sin(theta)
@@ -159,7 +161,7 @@ if __name__ == "__main__":
     sat.setAttitude(np.array([yaw,pitch,roll]))
     sat.ADCS.connectToSatellite(sat)
     print(np.array([yaw,pitch,roll]))
-    sat.ADCS.determineAttitude()
+    print(sat.ADCS.determineAttitude())
 
     
 

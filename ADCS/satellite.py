@@ -13,11 +13,16 @@ u = 3.986004418*10**14
 R = 6378137
 
 class Satellite:
-    def __init__(self, TLEfile, ADCS = None):
+    def __init__(self, TLEfile, epoch = None, ADCS = None):
         self.orbit = orbitfromTLE(TLEfile)
         self.params = self.orbit.eccentricity, np.radians(self.orbit.inclination), np.radians(self.orbit.argumentPerigee), np.radians(self.orbit.rightAscension), np.radians(self.orbit.meanAnomaly), self.orbit.meanMotion
         self.X, self.V = kepler_orbit(self.params, 0)
         self.ADCS = ADCS
+        self.time = epoch
+        self.attitude = np.array([0,0,0])
+
+    def setAttitude(self,attitude):
+        self.attitude = attitude
 
 def calculateState(e,h,trueAnom):
     """

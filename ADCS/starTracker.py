@@ -54,6 +54,19 @@ class starTracker:
         for key, value in self.stars.items():
             print(f'{key}, {value}')
 
+    def getActualReading(self,starName, satPos):
+        """
+            Gets the actual vector of a star from the satellite in ECI frame
+
+            Inputs:
+
+            starName    - the name of the star to use in the comparison. Assumes that it is in the text file.
+            satpos      - numpy array of the satellite coordinate in ECI     
+        """
+        #Get the true vector between the satellite and the star:
+        starFromSat = self.stars[starName] - satPos
+        return starFromSat
+
     def getReading(self,starName, satPos, satAttitude):
         """
             Fakes the error involved in a star tracker reading by adding
@@ -68,6 +81,7 @@ class starTracker:
         """
         #Get the true vector between the satellite and the star:
         starFromSat = self.stars[starName] - satPos
+
         #Calculate directional cosine matrix
         psi   = satAttitude[0]
         theta = satAttitude[1]
@@ -78,24 +92,21 @@ class starTracker:
                      [np.cos(phi)*np.sin(theta)*np.cos(psi) + np.sin(phi)*np.sin(psi), np.cos(phi)*np.sin(theta)*np.sin(psi)- np.sin(phi)*np.cos(psi), np.cos(phi)*np.cos(theta)]])
         
         #Get the coordinate of the star in the satellite body frame in polar form
-        starInBody = C.T @ starFromSat
+        starInBody = C @ starFromSat
         inBodyPolar = CART2POLAR(starInBody)
         el = inBodyPolar[0]
         az = inBodyPolar[1]
         R  = inBodyPolar[2]
 
         #Add Gausian noise
-        el = np.random.normal(el, self.accuracy)
-        az = np.random.normal(az, self.accuracy)
+        el = np.random.normal(el, np.deg2rad(self.accuracy))
+        az = np.random.normal(az, np.deg2rad(self.accuracy))
         
         #Convert back to cartesian in the body frame of the satellite
         inBodyPolar =  np.array([el,az,R])
         starInBody  =  POLAR2CART(inBodyPolar)
 
-        #Convert to ECI
-        starPos     =  C @ starInBody + satPos
-
-        return starPos
+        return starInBody
 
 def CART2POLAR(X):
     """
@@ -150,15 +161,12 @@ if __name__ == "__main__":
     long = 210.660139
     lat  = 60.833889
     r = 4.1343e+16
-    kentauras = GLLH2ECEF(np.array([lat,long,r]))
 
     satellite = Satellite("ISS.txt")
-
     pitch = np.arctan2(satellite.X[1], satellite.X[2])
     yaw   = np.arctan2(satellite.X[0], satellite.X[1])
     roll = np.arctan2(np.sin(pitch)*np.cos(yaw), np.cos(pitch)*np.cos(yaw))
 
     satAttitude = np.array([yaw,pitch,roll])
     reading = cross.getReading("kentauras", satellite.X, satAttitude)
-    print(kentauras)
-    print(reading)
+    print(cross.getActualReading("kentauras", satellite.X))

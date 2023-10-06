@@ -27,7 +27,7 @@ class Magnetometer:
         self.accuracy  = accuracy
         return
     
-    def getActualField(self, date, satPos):
+    def getActualReading(self, date, satPos):
         """
             getActualField
 
@@ -69,16 +69,16 @@ class Magnetometer:
 
         """
         #Calculate directional cosine matrix
-        psi = satAttitude[0]
+        phi = satAttitude[0]
         theta = satAttitude[1]
-        phi = satAttitude[2]
+        psi = satAttitude[2]
 
         C = np.array([[np.cos(theta)*np.cos(psi), np.cos(theta)*np.sin(psi), -np.sin(theta)],
                      [np.sin(phi)*np.sin(theta)*np.cos(psi) - np.cos(phi)*np.sin(psi), np.sin(phi)*np.sin(theta)*np.sin(psi) + np.cos(phi)*np.cos(psi), np.sin(phi)*np.cos(theta)],
                      [np.cos(phi)*np.sin(theta)*np.cos(psi) + np.sin(phi)*np.sin(psi), np.cos(phi)*np.sin(theta)*np.sin(psi)- np.sin(phi)*np.cos(psi), np.cos(phi)*np.cos(theta)]])
         
 
-        bFieldECI  = self.getActualField(date, satPos)
+        bFieldECI  = self.getActualReading(date, satPos)
         
         #Get the magnetic field in the body frame
         bFieldBody = C @ bFieldECI
@@ -94,11 +94,8 @@ class Magnetometer:
         bFieldBodyPolar =  np.array([el,az,R])
         
         bFieldBody  =  POLAR2CART(bFieldBodyPolar)
-        
-        #Convert to ECI
-        bFieldReading     =  C @ bFieldBody
 
-        return bFieldReading
+        return bFieldBody
 
 if __name__ == "__main__":
 
@@ -109,5 +106,5 @@ if __name__ == "__main__":
     pitch = np.arctan2(satellite.X[1], satellite.X[2])
     yaw   = np.arctan2(satellite.X[0], satellite.X[1])
     roll = np.arctan2(np.sin(pitch)*np.cos(yaw), np.cos(pitch)*np.cos(yaw))
-    satAttitude = np.array([yaw,pitch,roll])
+    satAttitude = np.array([roll,pitch,yaw])
     print(mg.getReading(J2000, satellite.X, satAttitude))

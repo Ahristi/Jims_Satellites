@@ -41,8 +41,9 @@ class Magnetometer:
 
         # Get the number of seconds as an integer
         seconds_difference = int(dT.total_seconds())
-
+    
         satPosECEF = ECI2ECEF(satPos, seconds_difference)
+ 
         satPosLLH  = ECEF2GLLH(satPosECEF)
 
         theta   =   90-satPosLLH[0]
@@ -82,7 +83,8 @@ class Magnetometer:
         
         #Get the magnetic field in the body frame
         bFieldBody = C @ bFieldECI
-        
+  
+
         bFieldBodyPolar = CART2POLAR(bFieldBody)
         
         #Add Gausian noise
@@ -107,4 +109,14 @@ if __name__ == "__main__":
     yaw   = np.arctan2(satellite.X[0], satellite.X[1])
     roll = np.arctan2(np.sin(pitch)*np.cos(yaw), np.cos(pitch)*np.cos(yaw))
     satAttitude = np.array([roll,pitch,yaw])
-    print(mg.getReading(J2000, satellite.X, satAttitude))
+
+    theta = pitch
+    psi = yaw  
+    phi = roll
+
+    C = np.array([[np.cos(theta)*np.cos(psi), np.cos(theta)*np.sin(psi), -np.sin(theta)],
+                    [np.sin(phi)*np.sin(theta)*np.cos(psi) - np.cos(phi)*np.sin(psi), np.sin(phi)*np.sin(theta)*np.sin(psi) + np.cos(phi)*np.cos(psi), np.sin(phi)*np.cos(theta)],
+                    [np.cos(phi)*np.sin(theta)*np.cos(psi) + np.sin(phi)*np.sin(psi), np.cos(phi)*np.sin(theta)*np.sin(psi)- np.sin(phi)*np.cos(psi), np.cos(phi)*np.cos(theta)]])
+    
+    print(C.T @ mg.getReading(J2000, satellite.X, satAttitude))
+    print(mg.getActualReading(J2000, satellite.X))

@@ -140,8 +140,6 @@ def POLAR2CART(X):
      az    =    X[1]
      r     =    X[2]
 
-     az    =    np.deg2rad(az)
-     el    =    np.deg2rad(el)
 
      x     =    r * np.cos(az)*np.cos(el)
      y     =    r * np.sin(az)*np.cos(el)

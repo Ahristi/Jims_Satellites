@@ -83,9 +83,9 @@ class starTracker:
         starFromSat = self.stars[starName] - satPos
 
         #Calculate directional cosine matrix
-        psi   = satAttitude[0]
+        phi = satAttitude[0]
         theta = satAttitude[1]
-        phi   = satAttitude[2]
+        psi = satAttitude[2]
 
         C = np.array([[np.cos(theta)*np.cos(psi), np.cos(theta)*np.sin(psi), -np.sin(theta)],
                      [np.sin(phi)*np.sin(theta)*np.cos(psi) - np.cos(phi)*np.sin(psi), np.sin(phi)*np.sin(theta)*np.sin(psi) + np.cos(phi)*np.cos(psi), np.sin(phi)*np.cos(theta)],

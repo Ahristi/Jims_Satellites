@@ -97,7 +97,7 @@ class starTracker:
         el = inBodyPolar[0]
         az = inBodyPolar[1]
         R  = inBodyPolar[2]
-
+        
         #Add Gausian noise
         el = np.random.normal(el, self.accuracy)
         az = np.random.normal(az, self.accuracy)
@@ -151,7 +151,7 @@ def POLAR2CART(X):
 
 
 if __name__ == "__main__":
-    cross = starTracker("star_config.csv" ,0.013)
+    cross = starTracker("star_config.csv" ,0.0002)
     #Rigil Kentauras
     # RA = 14h 39m 36.5s, Dec = -60° 50' 02"
     # 210.660139 long
@@ -173,7 +173,7 @@ if __name__ == "__main__":
 
     sigma = 0
 
-    for i in range(100000):
+    for i in range(100):
         sigma+=angleBetweenVectors(reading, C @ cross.getActualReading("kentauras", satellite.X))
 
-    print(sigma/100000)
+    print(sigma/100)

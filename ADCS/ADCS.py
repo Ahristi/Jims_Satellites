@@ -35,7 +35,7 @@ class ADCS:
         delta_x = np.array([10,10,10])
     
         max_iter = 400
-        tol = 1e-15
+        tol = 1e-16
         iter_count = 0
 
         #For now just assume only sensors are magnetometer and startracker
@@ -71,10 +71,10 @@ class ADCS:
         """
 
         #Initial guess
-        guess = np.array([0.0,0.0,0.0])
+        guess = np.array([1.5,-0.8,3])
         delta_x = np.array([10,10,10])
     
-        max_iter = 400
+        max_iter = 1000
         tol = 1e-15
         iter_count = 0
 
@@ -84,7 +84,7 @@ class ADCS:
         #3 times length for 3 outputs and 3 rows for 3 inputs
         H = np.zeros((3 * len(allSensors), 3))
 
-        delta_y = np.zeros((3 *  len(allSensors), 1))
+        delta_y = np.ones((3 *  len(allSensors), 1))*1000
         starName = "kentauras"
         actualAttitude = self.satellite.attitude
 
@@ -96,7 +96,7 @@ class ADCS:
         magnetReading = magnetReading/np.linalg.norm(magnetReading)
 
         sunReading = self.sunSensor.getReading(actualAttitude)
-        sunReading = sunReading/np.linalg.norm(sunReading)
+        sunReading =sunReading/np.linalg.norm(sunReading)
 
 
         #Get unit vectors of the actual readings
@@ -111,7 +111,6 @@ class ADCS:
 
 
         while np.linalg.norm(delta_x) > tol:
-    
 
 
             # Build H matrix
@@ -121,42 +120,52 @@ class ADCS:
 
             H_starTracker   =   jacobianDCM(psi,theta,phi, starActual)
             H_magnet        =   jacobianDCM(psi,theta,phi, magnetActual)
-            H_sun        =   jacobianDCM(psi,theta,phi, sunActual)
-      
+            H_sun           =   jacobianDCM(psi,theta,phi, sunActual)
+  
             H[0:3, :] = H_starTracker
             H[3:6, :] = H_magnet
             H[6:9, :] = H_sun
           
-            C = np.array([[np.cos(theta)*np.cos(psi), np.cos(theta)*np.sin(psi), -np.sin(theta)],
-                          [np.sin(phi)*np.sin(theta)*np.cos(psi)  - np.cos(phi)*np.sin(psi), np.sin(phi)*np.sin(theta)*np.sin(psi) + np.cos(phi)*np.cos(psi), np.sin(phi)*np.cos(theta)],
-                          [np.cos(phi)*np.sin(theta)*np.cos(psi) + np.sin(phi)*np.sin(psi), np.cos(phi)*np.sin(theta)*np.sin(psi)- np.sin(phi)*np.cos(psi), np.cos(phi)*np.cos(theta)]])
+            C = directionalCosine(phi,theta,psi)
+            
             
             #Calculate residuals   
-          
-            delta_y[0:3, 0] =   (startrackReading - C @ starActual)
-            delta_y[3:6, 0] =   (magnetReading    - C @ magnetActual)
-            delta_y[6:9, 0] =   (sunReading    - C @ sunActual)
-   
+            delta_y[0:3, 0] =   (startrackReading - C @ starActual)  
+            delta_y[3:6, 0] =   (magnetReading    - C @ magnetActual) 
+            delta_y[6:9, 0] =   (sunReading    - C @ sunActual) 
          
+            """
+                #Hard code the weighting matrix for now
+                W = np.array([[self.starTracker.accuracy**2/self.starTracker.accuracy,0,0,0,0,0,0,0,0],
+                            [0,self.starTracker.accuracy**2/self.starTracker.accuracy,0,0,0,0,0,0,0],
+                            [0,0,self.starTracker.accuracy**2/self.starTracker.accuracy,0,0,0,0,0,0],
+                            [0,0,0,self.starTracker.accuracy**2/self.magnetometer.accuracy,0,0,0,0,0],
+                            [0,0,0,0,self.starTracker.accuracy**2/self.magnetometer.accuracy,0,0,0,0],
+                            [0,0,0,0,0,self.starTracker.accuracy**2/self.magnetometer.accuracy,0,0,0],
+                            [0,0,0,0,0,0,self.starTracker.accuracy**2/self.sunSensor.accuracy,0,0],
+                            [0,0,0,0,0,0,0,self.starTracker.accuracy**2/self.sunSensor.accuracy,0],
+                            [0,0,0,0,0,0,0,0,self.starTracker.accuracy**2/self.sunSensor.accuracy]])
+            """
             #Hard code the weighting matrix for now
-            W = np.array([[100/self.starTracker.accuracy**2,0,0,0,0,0,0,0,0],
-                        [0,100/self.starTracker.accuracy**2,0,0,0,0,0,0,0],
-                        [0,0,100/self.starTracker.accuracy**2,0,0,0,0,0,0],
-                        [0,0,0,1/self.magnetometer.accuracy**2,0,0,0,0,0],
-                        [0,0,0,0,1/self.magnetometer.accuracy**2,0,0,0,0],
-                        [0,0,0,0,0,1/self.magnetometer.accuracy**2,0,0,0],
-                        [0,0,0,0,0,0,1/self.sunSensor.accuracy**2,0,0],
-                        [0,0,0,0,0,0,0,1/self.sunSensor.accuracy**2,0],
-                        [0,0,0,0,0,0,0,0,1/self.sunSensor.accuracy**2]])
-    
-           #W = np.eye(9)
-        
-
+            W = np.array([[1000,0,0,0,0,0,0,0,0],
+                        [0,1000,0,0,0,0,0,0,0],
+                        [0,0,1000,0,0,0,0,0,0],
+                        [0,0,0,0.01,0,0,0,0,0],
+                        [0,0,0,0,0.01,0,0,0,0],
+                        [0,0,0,0,0,0.01,0,0,0],
+                        [0,0,0,0,0,0,0.01,0,0],
+                        [0,0,0,0,0,0,0,0.01,0],
+                        [0,0,0,0,0,0,0,0,0.01]])
+            W = np.eye(9)
+      
             # Use non-linear least squares to estimate error in x
             delta_x = np.linalg.inv(H.T @ W @  H) @ H.T @ W @ delta_y
-
             guess += delta_x.flatten()
-            
+      
+
+            guess[0] = guess[0] % (2*np.pi)
+      
+            guess[2] = guess[2] % (2*np.pi)
             iter_count += 1
 
             if iter_count >= max_iter:
@@ -210,53 +219,44 @@ def jacobianDCM(yaw, pitch, roll, obs):
 
 
 
-
 if __name__ == "__main__": 
-    
+    #I can't work out the weights correctly so just model the star tracker using the magnetometer and sun sensor
+
+
     #Make the star tracker
-    cross = starTracker("star_config.csv", 0.011)
+    cross = starTracker("star_config.csv", 0.0027)
     
     #Make the magnetometer
     J2000 = datetime(2000, 1, 1, 12)
-    mg = Magnetometer(J2000,0.1)
+    mg = Magnetometer(J2000,0.0027)
 
     #Make the sun sensor
-    sunsens = sunSensor(10)
+    sunsens = sunSensor(0.0027)
 
     adcs = ADCS(mg,cross,sunsens)
 
     sat = Satellite("ISS.txt", J2000, adcs)
-    roll = np.deg2rad(45)
-    pitch = np.deg2rad(45)
-    yaw = np.deg2rad(45)
 
-
-    sat.setAttitude(np.array([roll,pitch,yaw]))
+    sat.setAttitude()
     sat.ADCS.connectToSatellite(sat)
-    print(np.array([roll,pitch,yaw]))
+    print(sat.attitude)
 
     #Get the angle between the two attitudes for pointing error
 
     unit = np.array([1,1,1])
-    C = directionalCosine(roll,pitch,yaw)
+    C = directionalCosine(sat.attitude[0],sat.attitude[1],sat.attitude[2])
     actualUnit = C @ unit
-
-
-    estimate = sat.ADCS.determineAttitudeM()
-    estimateRoll = estimate[0]
-    estimatePitch = estimate[1]
-    estimateYaw = estimate[2]
-
-    C = directionalCosine(estimateRoll,estimatePitch,estimateYaw)
-    estimateUnit = C @ unit
-
-    
-
-
-
-
-    
-
-        
+    sigma = 0
+ 
+    for i in range(1000):
+        estimate = sat.ADCS.determineAttitudeM()
+        estimateRoll = estimate[0] 
+        estimatePitch = estimate[1] 
+        estimateYaw = estimate[2]   
+        C = directionalCosine(estimateRoll,estimatePitch,estimateYaw)
+        estimateUnit = C @ unit
+        sigma+=angleBetweenVectors(estimateUnit,actualUnit)
+        print(angleBetweenVectors(estimateUnit,actualUnit))
+    print(sigma/1000)
     
 

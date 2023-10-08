@@ -20,9 +20,27 @@ class Satellite:
         self.ADCS = ADCS
         self.time = epoch
         self.attitude = np.array([0,0,0])
+        self.states = [np.concatenate((self.X, self.V), axis=0)]
+        self.times = []
 
-    def setAttitude(self,attitude):
-        self.attitude = attitude
+    def setAttitude(self):
+        """
+            Assumes that the control is perfect and sets the satellite
+            attitude to always be nadir pointing
+        """
+        x = self.states[-1][0]
+        y = self.states[-1][1]
+        z = self.states[-1][2]
+
+        yaw = np.arctan2(y,x)
+        pitch = np.arctan2(z, np.sqrt(x**2 +  y**2))
+        roll = np.pi/2
+
+        self.attitude = np.array([roll,pitch,yaw])
+
+
+
+
 
 def calculateState(e,h,trueAnom):
     """
@@ -101,8 +119,7 @@ def kepler_orbit(params, t):
     state = calculateState(e,h, trueAnom)
     #Convert perifocal to ECI
     X, V = PFF2ECEF(state[0],state[1],RAA,w,i)
-
-
+    
     return X,V  # Return as a NumPy array
 
 

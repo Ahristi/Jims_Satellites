@@ -56,7 +56,7 @@ class Magnetometer:
         bFieldECEF = GLLH2ECEF(bFieldLLH)
         
         bFieldECI  = ECEF2ECI(bFieldECEF, seconds_difference)
-        
+   
         return bFieldECI
     
     def getReading(self, date, satPos, satAttitude):

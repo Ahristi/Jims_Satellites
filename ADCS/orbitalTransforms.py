@@ -228,8 +228,8 @@ def directionalCosine(roll,pitch,yaw):
     """
         Function to return the directional cosine matrix
     """
-    theta = roll
-    phi   = pitch
+    theta = pitch
+    phi   = roll
     psi   = yaw 
     
     C = np.array([[np.cos(theta)*np.cos(psi), np.cos(theta)*np.sin(psi), -np.sin(theta)],

@@ -3,14 +3,15 @@ import ephem
 import math
 import numpy as np
 from scipy.optimize import least_squares
+import matplotlib.pyplot as plt
 
 # Create a GNSS observer
 observer = ephem.Observer()
 
 # Set the observer's location (latitude, longitude, and elevation)
-observer.lat = 'YOUR_OBSERVER_LATITUDE'  # Replace with the observer's latitude in radians
-observer.lon = 'YOUR_OBSERVER_LONGITUDE'  # Replace with the observer's longitude in radians
-observer.elev = YOUR_OBSERVER_ELEVATION  # Replace with the observer's elevation in meters
+observer.lat = -33  # Replace with the observer's latitude in radians
+observer.lon = 151  # Replace with the observer's longitude in radians
+observer.elev = 10  # Replace with the observer's elevation in meters
 
 # Initialize the GNSS satellites (e.g., GPS, GLONASS, Galileo, etc.)
 # You can specify the constellation you want to use.
@@ -58,6 +59,18 @@ measurement_weights = np.ones(num_measurements)
 # Optimization using weighted non-linear least squares
 result = least_squares(residuals, initial_guess, method='lm', ftol=1e-6, args=(), kwargs={})
 estimated_state = result.x
+
+# Plot the true and estimated positions
+plt.figure(figsize=(10, 6))
+plt.scatter(true_state[0], true_state[1], label="True Position", color="blue", marker="o")
+plt.scatter(estimated_state[0], estimated_state[1], label="Estimated Position", color="red", marker="x")
+plt.scatter(star_positions[:, 0], star_positions[:, 1], label="Star Tracker Measurements", color="green", marker="*")
+plt.xlabel("X Position")
+plt.ylabel("Y Position")
+plt.legend()
+plt.grid(True)
+plt.title("True vs. Estimated Satellite Position")
+plt.show()
 
 print("True State:", true_state)
 print("Estimated State:", estimated_state)

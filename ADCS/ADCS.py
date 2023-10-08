@@ -23,46 +23,6 @@ class ADCS:
     def connectToSatellite(self, satellite):
         self.satellite = satellite
 
-    def determineAttitude(self):
-        """
-            determineAttitude:
-
-            Determines the satellite attitude based on the sensor readings by applying weighted non linear least squares.        
-        """
-
-        #Initial guess
-        guess = np.array([0.0,0.0,0.0])
-        delta_x = np.array([10,10,10])
-    
-        max_iter = 400
-        tol = 1e-16
-        iter_count = 0
-
-        #For now just assume only sensors are magnetometer and startracker
-        allSensors = [self.starTracker, self.magnetometer]
-
-        #3 times length for 3 outputs and 3 rows for 3 inputs
-        H = np.zeros((3 * len(allSensors), 3))
-
-        delta_y = np.zeros((3 *  len(allSensors), 1))
-        starName = "kentauras"
-        actualAttitude = self.satellite.attitude
-
-        #Get unit vector for the sensor readings
-        startrackReading = self.starTracker.getReading(starName, self.satellite.X, actualAttitude)
-        startrackReading = startrackReading/np.linalg.norm(startrackReading)
-
-        magnetReading = self.magnetometer.getReading(self.satellite.time, self.satellite.X, actualAttitude)
-        magnetReading = magnetReading/np.linalg.norm(magnetReading)
-
-        #Get unit vectors of the actual readings
-        starActual = self.starTracker.getActualReading(starName, self.satellite.X)
-        starActual = starActual/np.linalg.norm(starActual)
-
-        magnetActual = self.magnetometer.getActualReading(self.satellite.time, self.satellite.X)
-        magnetActual = magnetActual/np.linalg.norm(magnetActual)
-
-
     def determineAttitudeM(self):
         """
             determineAttitude:

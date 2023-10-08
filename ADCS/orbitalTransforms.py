@@ -196,8 +196,47 @@ def ECEF2ECI(X_ECEF,t):
     ECEF = np.matmul(np.linalg.inv(C),X_ECEF)
     return ECEF
 
+def angleBetweenVectors(vector1, vector2):
+    """
+        Gets the angle between two vectors
 
+        Inputs:
+        vector1: numpy column vector
+        vector2: numpy column vector
 
+        Outputs:
+
+        theta: the angle between the two vectors in degrees
+
+    
+    """
+    dotProduct = np.dot(np.transpose(vector1), vector2) #Transpose because np has a cry when you try to dot product vectors
+    normVector1 = np.linalg.norm(vector1)
+    normVector2 = np.linalg.norm(vector2)
+    
+    # Ensure the denominator is not zero to avoid division by zero errors
+    if normVector1 == 0 or normVector2 == 0:
+        return None
+    
+    cos_theta = dotProduct / (normVector1 * normVector2)
+    # Use arccosine to calculate the angle in radians
+    theta = np.arccos(np.clip(cos_theta, -1.0, 1.0))
+    
+    return np.rad2deg(np.linalg.norm(theta)) #Return a float instead of a numpy vector containing a single float
+
+def directionalCosine(roll,pitch,yaw):
+    """
+        Function to return the directional cosine matrix
+    """
+    theta = roll
+    phi   = pitch
+    psi   = yaw 
+    
+    C = np.array([[np.cos(theta)*np.cos(psi), np.cos(theta)*np.sin(psi), -np.sin(theta)],
+                    [np.sin(phi)*np.sin(theta)*np.cos(psi)  - np.cos(phi)*np.sin(psi), np.sin(phi)*np.sin(theta)*np.sin(psi) + np.cos(phi)*np.cos(psi), np.sin(phi)*np.cos(theta)],
+                    [np.cos(phi)*np.sin(theta)*np.cos(psi) + np.sin(phi)*np.sin(psi), np.cos(phi)*np.sin(theta)*np.sin(psi)- np.sin(phi)*np.cos(psi), np.cos(phi)*np.cos(theta)]])
+    
+    return C
 
 
 if __name__ == "__main__":

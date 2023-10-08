@@ -1,6 +1,6 @@
 import csv
 import numpy as np
-from orbitalTransforms import GLLH2ECEF
+from orbitalTransforms import *
 from satellite import Satellite
 
 
@@ -99,8 +99,8 @@ class starTracker:
         R  = inBodyPolar[2]
 
         #Add Gausian noise
-        el = np.random.normal(el, np.deg2rad(self.accuracy))
-        az = np.random.normal(az, np.deg2rad(self.accuracy))
+        el = np.random.normal(el, self.accuracy)
+        az = np.random.normal(az, self.accuracy)
         
         #Convert back to cartesian in the body frame of the satellite
         inBodyPolar =  np.array([el,az,R])
@@ -151,7 +151,7 @@ def POLAR2CART(X):
 
 
 if __name__ == "__main__":
-    cross = starTracker("star_config.csv" ,0.0154)
+    cross = starTracker("star_config.csv" ,0.013)
     #Rigil Kentauras
     # RA = 14h 39m 36.5s, Dec = -60° 50' 02"
     # 210.660139 long
@@ -166,7 +166,14 @@ if __name__ == "__main__":
     pitch = np.arctan2(satellite.X[1], satellite.X[2])
     yaw   = np.arctan2(satellite.X[0], satellite.X[1])
     roll = np.arctan2(np.sin(pitch)*np.cos(yaw), np.cos(pitch)*np.cos(yaw))
+    C = directionalCosine(roll,pitch,yaw)
 
-    satAttitude = np.array([yaw,pitch,roll])
+    satAttitude = np.array([roll,pitch,yaw])
     reading = cross.getReading("kentauras", satellite.X, satAttitude)
-    print(cross.getActualReading("kentauras", satellite.X))
+
+    sigma = 0
+
+    for i in range(100000):
+        sigma+=angleBetweenVectors(reading, C @ cross.getActualReading("kentauras", satellite.X))
+
+    print(sigma/100000)

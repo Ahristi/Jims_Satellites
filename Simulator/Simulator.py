@@ -103,20 +103,26 @@ class Simulator:
         # Create subplots with 3 rows and 1 column
         fig, axes = plt.subplots(3, 1, figsize=(8, 10))
 
-        # Plot the first graph on the top
+        # Plot roll
         axes[0].plot(sat.times, allAttitudes[:,0], color='blue')
-        axes[0].set_title('Plot 1')
-        axes[0].legend()
+        axes[0].set_title('Roll')
+        axes[0].set_xlabel('Time (s)')
+        axes[0].set_ylabel('Roll (Rad)')
+     
 
-        # Plot the second graph in the middle
+        # Plot pitch
         axes[1].plot(sat.times, allAttitudes[:,1], color='green')
-        axes[1].set_title('Plot 2')
-        axes[1].legend()
+        axes[1].set_title('Pitch')
+        axes[1].set_xlabel('Time (s)')
+        axes[1].set_ylabel('Pitch (Rad)')
+     
 
-        # Plot the third graph at the bottom
+        # Plot yaw
         axes[2].plot(sat.times, allAttitudes[:,2], color='red')
-        axes[2].set_title('Plot 3')
-        axes[2].legend()
+        axes[2].set_title('Yaw')
+        axes[2].set_xlabel('Time (s)')
+        axes[2].set_ylabel('Yaw (Rad)')
+    
 
         # Adjust spacing between the subplots
         plt.tight_layout()
@@ -128,8 +134,9 @@ if __name__ == "__main__":
     sat = Satellite("ISS.txt", "ISS")
     sim = Simulator([sat], [])
     sim.simulate(0,24*60*60, 10, motionEquation)
-    sim.showOrbit()
+    sim.showOrbit() 
     sim.showAttitudes()
+    
 
 
 

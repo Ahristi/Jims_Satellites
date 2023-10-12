@@ -8,20 +8,107 @@
 
 from satellite import Satellite
 from orbitalTransforms import *
-from magnetometer import Magnetometer
-from starTracker import starTracker
+from Simulator.magnetometer import Magnetometer
+from Simulator.starTracker import starTracker
 from datetime import datetime
-from sunSensor import sunSensor
+from Simulator.sunSensor import sunSensor
+
+NUM_STAR_TRACKER = 2 
+
 
 class ADCS:
     def __init__(self, magnetometer = None, startracker = None, sunsensor = None):
-        self.magnetometer = magnetometer
-        self.starTracker = startracker
-        self.satellite = None
+        
+        self.magnetometer = magnetometer        
+        self.starTracker1 = startracker         
+        self.starTracker2 = startracker
         self.sunSensor = sunsensor
+
+        self.satellite = None
 
     def connectToSatellite(self, satellite):
         self.satellite = satellite
+
+
+    def determineFineAttitude(self):
+        """
+            determineAttitude:
+
+            Determines the satellite attitude based on the sensor readings by applying weighted non linear least squares.        
+        """
+
+        #Initial guess
+        guess = np.array([0,0,0])
+        delta_x = np.array([10,10,10])
+    
+        max_iter = 1000
+        tol = 1e-15
+        iter_count = 0
+
+        #3 times length for 3 outputs and 3 rows for 3 inputs
+        H = np.zeros((3 * NUM_STAR_TRACKER, 3))
+
+        delta_y = np.ones((3 *  NUM_STAR_TRACKER, 1))*1000
+
+
+        starName = "kentauras" #This is hard coded but we can add multiple stars later
+        
+
+
+        #Get readings and convert to unit vector
+        pos = self.satellite.states[-1][0:3]          #Current pos is the most recent one
+        actualAttitude = self.satellite.attitudes[-1] #Current attitude is the most recent one
+
+        startrack1Reading = self.starTracker.getReading(starName, pos, actualAttitude)
+        startrack1Reading = startrack1Reading/np.linalg.norm(startrack1Reading)
+
+        startrack2Reading = self.starTracker.getReading(starName, pos, actualAttitude)
+        startrack2Reading = startrack2Reading/np.linalg.norm(startrack2Reading)
+
+        #Get unit vector of the actual reading
+        starActual = self.starTracker.getActualReading(starName, self.satellite.X)
+        starActual = starActual/np.linalg.norm(starActual)
+
+
+        while np.linalg.norm(delta_x) > tol:
+
+
+            # Build H matrix
+            phi  = guess[0]
+            theta = guess[1]
+            psi   = guess[2]
+
+            H_starTracker   =   jacobianDCM(psi,theta,phi, starActual)
+
+            H[0:3, :] = H_starTracker
+            H[3:6, :] = H_starTracker
+          
+            C = directionalCosine(phi,theta,psi)
+            
+            
+            #Calculate residuals   
+            delta_y[0:3, 0] =   (startrack1Reading - C @ starActual)  
+            delta_y[3:6, 0] =   (startrack2Reading    - C @ starActual) 
+
+            #Both star trackers are the same so weight them the same
+            W = np.eye(9)
+            #TODO: Maybe make one star tracker better than the other to pretend one was manufactured a bit better or is in a better part of the satellite
+
+            # Use non-linear least squares to estimate error in x
+            delta_x = np.linalg.inv(H.T @ W @  H) @ H.T @ W @ delta_y
+            guess += delta_x.flatten()
+      
+            #Deal with angle wrap around
+            guess[0] = guess[0] % (2*np.pi)
+            guess[2] = guess[2] % (2*np.pi)
+            iter_count += 1
+
+            if iter_count >= max_iter:
+                break
+  
+        return guess
+
+
 
     def determineAttitude(self):
         """
@@ -83,8 +170,7 @@ class ADCS:
             H_sun           =   jacobianDCM(psi,theta,phi, sunActual)
   
             H[0:3, :] = H_starTracker
-            H[3:6, :] = H_magnet
-            H[6:9, :] = H_sun
+            H[3:6, :] = H_starTracker
           
             C = directionalCosine(phi,theta,psi)
             
@@ -209,7 +295,7 @@ if __name__ == "__main__":
     sigma = 0
  
     for i in range(1000):
-        estimate = sat.ADCS.determineAttitudeM()
+        estimate = sat.ADCS.determineFineAttitude()
         estimateRoll = estimate[0] 
         estimatePitch = estimate[1] 
         estimateYaw = estimate[2]   

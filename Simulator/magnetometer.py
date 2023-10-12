@@ -16,7 +16,7 @@ from orbitalTransforms import GLLH2ECEF
 from orbitalTransforms import ECEF2ECI
 from orbitalTransforms import CART2POLAR
 from orbitalTransforms import POLAR2CART
-from satellite import Satellite
+from Satellite import Satellite
 R = 6378137
 
 

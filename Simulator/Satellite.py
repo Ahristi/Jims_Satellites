@@ -74,6 +74,7 @@ class Satellite:
 
         #ADCS routines
         self.setDesiredAttitude()
+
         #Power routines
 
         #Payload routines
@@ -89,7 +90,7 @@ class Satellite:
 
         yaw = np.arctan2(y,x)
         pitch = np.arctan2(z, np.sqrt(x**2 +  y**2))
-        roll = np.pi/2
+        roll = 0
         self.attitudes.append(np.array([roll,pitch,yaw]))
 
 

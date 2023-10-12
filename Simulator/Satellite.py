@@ -21,14 +21,12 @@ class Satellite:
             name    - name of the satellite        
         """
         #Orbital Parameters
-
         params = orbitfromTLE(TLEfile)
         self.inclination, self.rightAscension, self.eccentricity, self.argumentPerigee, self.meanAnomaly, self.meanMotion, self.tSinceVernal  = params
         
         #Coordinates
         X,V = keplerOrbit(params, 0)
         state0  = np.concatenate((X, V))
-
 
         self.states     = [state0]      #Each state (pos,vel) of the satellite in ECI frame
         self.ECEF       =   []          #Each position of the satellite in ECEF frame
@@ -68,7 +66,7 @@ def orbitfromTLE(TLEfile):
     eccentricity               =             float(tleArray[1][4])*10**(-7)
     argumentPerigee            =  np.deg2rad(float(tleArray[1][5]))
     meanAnomaly                =  np.deg2rad(float(tleArray[1][6]))
-    meanMotion                 =  np.deg2rad(float(tleArray[1][7]))
+    meanMotion                 =  float(tleArray[1][7])
     
     return inclination, rightAscension, eccentricity, argumentPerigee,meanAnomaly, meanMotion, tSinceVernal
 

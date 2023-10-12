@@ -8,7 +8,8 @@
 import numpy as np
 from Satellite import *
 from orbitalTransforms import *
-
+import pyvista as pv
+from pyvista import examples
 
 class Simulator:
 
@@ -49,7 +50,7 @@ class Simulator:
          
             t0 += h
 
-    def showOrbit():
+    def showOrbit(self):
         """
             Plots the satellite orbit using pyvista
 
@@ -58,11 +59,37 @@ class Simulator:
             NOTE: This only plots the first satellite orbit at the moment        
         """
 
+        title = "Simulated Satellite Orbit"
+        sat = self.satellites[0]
+        x = []
+        y = []
+        z = []
+        #This is dodgy I know 
+        for state in sat.states:
+            x.append(state[0])
+            y.append(state[1])
+            z.append(state[2])
+
+        mesh = examples.planets.load_earth(radius = 6378137)
+        texture = examples.load_globe_texture()
+        pl = pv.Plotter()
+        scatter_points = np.column_stack((x, y, z))
+        pl.add_title(title, font_size=18, color='cyan', font=None, shadow=False)
+        scatter1 = pl.add_points(scatter_points, color="deeppink", point_size=2)
+      
+        image_path = examples.planets.download_stars_sky_background(
+            load=False
+        )
+        pl.add_background_image(image_path)
+        _ = pl.add_mesh(mesh, texture=texture)
+        pl.show()
+
 
 
 if __name__ == "__main__":
     sat = Satellite("ISS.txt", "ISS")
     sim = Simulator([sat], [])
     sim.simulate(0,24*60*60, 10, motionEquation)
-    print(sat.states)
+    sim.showOrbit()
+
 

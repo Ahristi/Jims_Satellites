@@ -344,8 +344,8 @@ def keplerOrbit(params, t):
         t            - the time passed since epoch
     
     """
-    e, i, w, RAA, M0, meanMotion, tsinceV = params
-
+    i, RAA, e, w, M0, meanMotion, tsinceV = params
+   
     #Get number of revolutions per second
     meanMotionSeconds   =   meanMotion/(24*60*60)
     #Calculate period in seconds
@@ -361,10 +361,10 @@ def keplerOrbit(params, t):
 
     #Calculate perigee
     a   =   (((T*np.sqrt(u))/(2*np.pi))**(2/3))
-
+        
     #Calculate the distance from the focus
     r   =   (a*(1-e**2)/(1+e*np.cos(trueAnom)))
-    
+
     #Calculate the Angular Momentum
     h   =    np.sqrt(a*u*(1-e**2))
     

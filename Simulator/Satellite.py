@@ -7,6 +7,7 @@
 """
 from datetime import datetime
 
+from orbitalTransforms import *
 
 
 class Satellite:
@@ -20,10 +21,16 @@ class Satellite:
             name    - name of the satellite        
         """
         #Orbital Parameters
-        self.inclination, self.rightAscension, self.eccentricity, self.argumentPerigee, self.meanAnomaly, self.meanMotion, self.tSinceVernal  = orbitfromTLE(TLEfile)
 
+        params = orbitfromTLE(TLEfile)
+        self.inclination, self.rightAscension, self.eccentricity, self.argumentPerigee, self.meanAnomaly, self.meanMotion, self.tSinceVernal  = params
+        
         #Coordinates
-        self.states     =   []          #Each state (pos,vel) of the satellite in ECI frame
+        X,V = keplerOrbit(params, 0)
+        state0  = np.concatenate((X, V))
+
+
+        self.states     = [state0]      #Each state (pos,vel) of the satellite in ECI frame
         self.ECEF       =   []          #Each position of the satellite in ECEF frame
         self.GLLH       =   []          #Each position of the satellite in GLLH frame
         self.times      =   []          #Each time during the simulation
@@ -33,8 +40,6 @@ class Satellite:
         self.payload    =   None        #Satellite camera payload
         self.GNSS       =   None        #Satellite GNSS
         self.EPS        =   None        #Satellite EPS
-
-
         
 
 def orbitfromTLE(TLEfile):
@@ -58,12 +63,12 @@ def orbitfromTLE(TLEfile):
     vernalSeconds = vernal.total_seconds()
     tSinceVernal = epoch - vernalSeconds
     #Line2
-    inclination                =   float(tleArray[1][2])
-    rightAscension             =   float(tleArray[1][3])
-    eccentricity               =   float(tleArray[1][4])*10**(-7)
-    argumentPerigee            =   float(tleArray[1][5])
-    meanAnomaly                =   float(tleArray[1][6])
-    meanMotion                 =   float(tleArray[1][7])
+    inclination                =  np.deg2rad(float(tleArray[1][2]))
+    rightAscension             =  np.deg2rad(float(tleArray[1][3]))
+    eccentricity               =             float(tleArray[1][4])*10**(-7)
+    argumentPerigee            =  np.deg2rad(float(tleArray[1][5]))
+    meanAnomaly                =  np.deg2rad(float(tleArray[1][6]))
+    meanMotion                 =  np.deg2rad(float(tleArray[1][7]))
     
     return inclination, rightAscension, eccentricity, argumentPerigee,meanAnomaly, meanMotion, tSinceVernal
 

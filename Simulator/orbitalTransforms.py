@@ -1,6 +1,13 @@
 import numpy as np
 
 
+#Global Variables
+u = 3.986004418*10**14  
+R = 6378137
+r = 3064192.46769972
+
+
+
 """
      ECI2ECEF
 
@@ -19,7 +26,6 @@ def ECI2ECEF(X, t):
                          [0,0,1]])
     ECEF = np.matmul(C,X)
     return ECEF
-
 
 
 """
@@ -80,9 +86,9 @@ def GLLH2ECEF(X):
 
 
 
-def PFF2ECEF(X,V,O,w,i):
+def PFF2ECI(X,V,O,w,i):
     """
-        Converts satellite state from 2D perifocal frame to ECEF
+        Converts satellite state from 2D perifocal frame to ECI
 
         Inputs:
         X: Position vector of the satellite in perifocal frame
@@ -237,6 +243,187 @@ def directionalCosine(roll,pitch,yaw):
                     [np.cos(phi)*np.sin(theta)*np.cos(psi) + np.sin(phi)*np.sin(psi), np.cos(phi)*np.sin(theta)*np.sin(psi)- np.sin(phi)*np.cos(psi), np.cos(phi)*np.cos(theta)]])
     
     return C
+
+
+
+
+def motionEquation(state):
+    """
+        Computes the derivative of the satellite state vector
+        which contains the velocity and acceleration of the satellite.
+
+        Inputs:
+
+        state: 6x1 numpy vector of the following format
+                    x
+                    y
+                    z
+                    dx/dt
+                    dy/dt
+                    dz/dt
+
+        Returns:
+        dS: Derivate of the state vector in the following format
+                    dx/dt
+                    dy/dt
+                    dz/dt
+                    d^2x/dt^2
+                    d^2y/dt^2
+                    d^2z/dt^2
+    """
+    X = state[0:3]
+    a  = calculateAcceleration(X)
+    dS = np.concatenate((state[3:6],a), axis=0)
+    return dS
+
+
+def motionEquationJ2(state):
+    """
+        Computes the derivative of the satellite state vector
+        accounting for J2 pertubations.
+
+        Inputs:
+
+        state: 6x1 numpy vector of the following format
+                    x
+                    y
+                    z
+                    dx/dt
+                    dy/dt
+                    dz/dt
+
+        Returns:
+        dS: Derivate of the state vector in the following format
+                    dx/dt
+                    dy/dt
+                    dz/dt
+                    d^2x/dt^2
+                    d^2y/dt^2
+                    d^2z/dt^2
+    """
+    X = state[0:3]  
+    x = state[0]
+    y = state[1]
+    z = state[2]
+
+    J2 = 1.08263*10**-3
+    r = np.linalg.norm(X)
+    a  = calculateAcceleration(X)
+    p = 1.5*J2*u*R**2/r**4 * np.array([[(x/r)*(5*z**2/r**2-1)], [(y/r)*(5*z**2/r**2-1)], [(z/r)*(5*z**2/r**2-3)]])
+    dS = np.concatenate((state[3:6],a), axis=0)
+    return dS
+
+def calculateAcceleration(X):
+    """
+        Calculates position and velocity vector from TLE data
+
+        Inputs:
+        e: Eccentric anomaly
+        h: Angular Momentum
+        trueAnom: True Anomaly
+
+        Returns:
+
+        r: Position vector of the satellite
+        v: Velocity vector of the satellite
+    """
+    r = np.linalg.norm(X)
+    a = (-u/r**3) * X 
+    return a
+
+
+# Define the equation of motion for a Keplerian orbit
+def keplerOrbit(params, t):
+    """
+        Determine the initial state of a satellite based on the 
+        orbital parameters and time.
+
+        Inputs:
+        params       - Orbital parameters of the sattelite in this order:
+                                e, i, w, RAA, M0, meanMotion
+        t            - the time passed since epoch
+    
+    """
+    e, i, w, RAA, M0, meanMotion, tsinceV = params
+
+    #Get number of revolutions per second
+    meanMotionSeconds   =   meanMotion/(24*60*60)
+    #Calculate period in seconds
+    T   =   1/meanMotionSeconds
+    n = 2*np.pi/T
+    M_e = M0 + n*t
+
+    #Calculate Eccentric Anomaly
+    E   =   calculateEccentricAnomaly(M_e,e)
+    #Calculate True Anomaly
+
+    trueAnom    =   2*np.arctan(np.sqrt((1+e)/(1-e))*np.tan(E/2))
+
+    #Calculate perigee
+    a   =   (((T*np.sqrt(u))/(2*np.pi))**(2/3))
+
+    #Calculate the distance from the focus
+    r   =   (a*(1-e**2)/(1+e*np.cos(trueAnom)))
+    
+    #Calculate the Angular Momentum
+    h   =    np.sqrt(a*u*(1-e**2))
+    
+    #Calculate radius of perigee
+    r_p =  (h**2/u)* (1/(1+e))
+    
+    #Calculate semi-major axis
+    r_a =  2*a - r_p
+
+    #Get initial state of the satellite in perifocal frame
+    state = calculateState(e,h, trueAnom)
+    
+    #Convert perifocal to ECI
+    X, V = PFF2ECI(state[0],state[1],RAA,w,i)
+
+
+    return X,V  # Return as a NumPy array
+
+
+
+
+
+def calculateState(e,h,trueAnom):
+    """
+        Calculates position and velocity vector from TLE data
+
+        Inputs:
+        e: Eccentric anomaly
+        h: Angular Momentum
+        trueAnom: True Anomaly
+
+        Returns:
+
+        r: Position vector of the satellite
+        v: Velocity vector of the satellite
+
+    """
+    r = (h**2 / u)*(1/(1+e*np.cos(trueAnom))) * np.array([np.cos(trueAnom), np.sin(trueAnom), 0])
+    v = (u/h)* np.array([-np.sin(trueAnom), e + np.cos(trueAnom), 0])
+    return r,v
+
+
+def calculateEccentricAnomaly(M_e,e):
+    """
+        Calcualtes the eccentric anomaly of a satellite
+
+        Inputs:
+        M_e: Mean Anomaly of a satellite
+        e:   eccentricity of satellite's orbit
+
+        Returns:
+        E: eccentric anomaly
+
+    """
+    #Assume that eccentric anomaly is equal to mean anomaly
+    E = M_e
+    while (np.abs(M_e + e*np.sin(E) - E) > 0.00000001):
+        E = M_e + e*np.sin(E)
+    return E
 
 
 if __name__ == "__main__":

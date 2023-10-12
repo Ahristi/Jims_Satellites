@@ -1,7 +1,7 @@
 import csv
 import numpy as np
 from orbitalTransforms import *
-from satellite import Satellite
+from Satellite import Satellite
 
 
 """

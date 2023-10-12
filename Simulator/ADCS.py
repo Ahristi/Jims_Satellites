@@ -33,9 +33,9 @@ class ADCS:
         """
         
         self.magnetometer = Magnetometer(0, MAGNETOMETER_ACCURACY)
-        self.starTracker1 = startracker(starFile, accuracy)      
-        self.starTracker2 = startracker
-        self.sunSensor = sunsensor
+        self.starTracker1 = starTracker(starTrackerFile, STARTRACKER_ACCURACY)      
+        self.starTracker2 = starTracker(starTrackerFile, STARTRACKER_ACCURACY)     
+        self.sunSensor = sunSensor(SUNSENSOR_ACCURACY)
 
         self.satellite = None
 

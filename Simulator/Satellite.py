@@ -4,7 +4,8 @@
     Python implementation of a satellite object containing the 
     integration of different subsystems.
 
-    NOTE:   The positions and attitudes used are the ACTUAL ones used for simulation.
+    NOTE:   The positions and attitudes used are the ACTUAL ones which we use for simulation and to add noise.
+
             The estimated positions, attitudes etc are the ones that are in the subsystems,
             Ie if you wanted the estimated attitude, then you would use the attitude from the 
             ADCS subsystem.
@@ -75,9 +76,14 @@ class Satellite:
         #ADCS routines
         self.setDesiredAttitude()
 
-        #Power routines
+        #Position routine
 
         #Payload routines
+     
+
+        #Power routines
+
+
 
     def setDesiredAttitude(self):
         """

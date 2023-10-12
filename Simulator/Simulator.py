@@ -133,10 +133,10 @@ class Simulator:
 if __name__ == "__main__":
     sat = Satellite("ISS.txt", "ISS")
     sim = Simulator([sat], [])
-    sim.simulate(0,24*60*60, 10, motionEquation)
+    sim.simulate(0,24*60*60, 1, motionEquation)
     sim.showOrbit() 
     sim.showAttitudes()
-    
+
 
 
 

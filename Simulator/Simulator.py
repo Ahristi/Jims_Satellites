@@ -10,6 +10,7 @@ from Satellite import *
 from orbitalTransforms import *
 import pyvista as pv
 from pyvista import examples
+import matplotlib.pyplot as plt
 
 class Simulator:
 
@@ -38,15 +39,18 @@ class Simulator:
                 k3 = h * f(sat.states[-1] + k2/2)
                 k4 = h * f(sat.states[-1] + k3)
 
+
+                #Propogate the satellite orbit
                 state_new = sat.states[-1] + (k1 + 2*k2 + 2*k3 + k4) / 6
                 sat.states.append(state_new)
                 sat.times.append(t0+h)
-
                 currentECEF = ECI2ECEF([state_new[0], state_new[1], state_new[2]],t0+h)
                 currentGLLH = ECEF2GLLH([currentECEF[0],currentECEF[1],currentECEF[2]])
-
                 sat.ECEF.append(currentECEF)
                 sat.GLLH.append(currentGLLH)
+
+                #Service the satellite's routines
+                sat.tick()
          
             t0 += h
 
@@ -85,11 +89,47 @@ class Simulator:
         pl.show()
 
 
+    def showAttitudes(self):
+        """
+            Plots the satellite attitudes from a simulation
+
+            Assumes that the orbit has already been propogated using simulate()
+
+            NOTE: This only plots the first satellite attitudes at the moment        
+        """
+        sat = self.satellites[0]
+        allAttitudes = np.array(sat.attitudes)
+
+        # Create subplots with 3 rows and 1 column
+        fig, axes = plt.subplots(3, 1, figsize=(8, 10))
+
+        # Plot the first graph on the top
+        axes[0].plot(sat.times, allAttitudes[:,0], color='blue')
+        axes[0].set_title('Plot 1')
+        axes[0].legend()
+
+        # Plot the second graph in the middle
+        axes[1].plot(sat.times, allAttitudes[:,1], color='green')
+        axes[1].set_title('Plot 2')
+        axes[1].legend()
+
+        # Plot the third graph at the bottom
+        axes[2].plot(sat.times, allAttitudes[:,2], color='red')
+        axes[2].set_title('Plot 3')
+        axes[2].legend()
+
+        # Adjust spacing between the subplots
+        plt.tight_layout()
+
+        # Display the plots
+        plt.show()
 
 if __name__ == "__main__":
     sat = Satellite("ISS.txt", "ISS")
     sim = Simulator([sat], [])
     sim.simulate(0,24*60*60, 10, motionEquation)
     sim.showOrbit()
+    sim.showAttitudes()
+
 
 

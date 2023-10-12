@@ -4,6 +4,11 @@
     Python implementation of a satellite object containing the 
     integration of different subsystems.
 
+    NOTE:   The positions and attitudes used are the ACTUAL ones used for simulation.
+            The estimated positions, attitudes etc are the ones that are in the subsystems,
+            Ie if you wanted the estimated attitude, then you would use the attitude from the 
+            ADCS subsystem.
+
 """
 from datetime import datetime
 
@@ -33,15 +38,63 @@ class Satellite:
         self.GLLH       =   []          #Each position of the satellite in GLLH frame
         self.times      =   []          #Each time during the simulation
 
+        #Attitude
+        self.attitudes  =   []          #Each satellite attitude in ECI frame.
+        self.setDesiredAttitude()       #Set the initial attitude
+        
+        
         #Subsystems
         self.ADCS       =   None        #Satellite ADCS subsystem
         self.payload    =   None        #Satellite camera payload
         self.GNSS       =   None        #Satellite GNSS
         self.EPS        =   None        #Satellite EPS
         
+    def setAttitude(self):
+        """
+            Assumes that the control is perfect and sets the satellite
+            attitude to always be nadir pointing
+        """
+        x = self.states[-1][0]
+        y = self.states[-1][1]
+        z = self.states[-1][2]
+
+        yaw = np.arctan2(y,x)
+        pitch = np.arctan2(z, np.sqrt(x**2 +  y**2))
+        roll = np.pi/2
+
+        self.attitude = np.array([roll,pitch,yaw])
+
+
+    def tick(self):
+        """
+            Peforms the satellite OBC functions.
+            Called every iteration of the simulation.       
+        
+        """
+
+        #ADCS routines
+        self.setDesiredAttitude()
+        #Power routines
+
+        #Payload routines
+
+    def setDesiredAttitude(self):
+        """
+            Sets the desired attitude of the satellite. 
+            For the time being attitude change is assumed to be instant.
+        """
+        x = self.states[-1][0]
+        y = self.states[-1][1]
+        z = self.states[-1][2]
+
+        yaw = np.arctan2(y,x)
+        pitch = np.arctan2(z, np.sqrt(x**2 +  y**2))
+        roll = np.pi/2
+        self.attitudes.append(np.array([roll,pitch,yaw]))
+
 
 def orbitfromTLE(TLEfile):
-    """
+    """  
         Output orbital parameters from a TLE text file.    
     """
     tleFile = open(TLEfile, "r")

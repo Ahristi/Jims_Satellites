@@ -23,7 +23,7 @@ class ADCS:
     def connectToSatellite(self, satellite):
         self.satellite = satellite
 
-    def determineAttitudeM(self):
+    def determineAttitude(self):
         """
             determineAttitude:
 

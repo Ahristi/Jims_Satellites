@@ -42,6 +42,11 @@ class Satellite:
 
 
 
+
+
+
+
+
 def calculateState(e,h,trueAnom):
     """
         Calculates position and velocity vector from TLE data

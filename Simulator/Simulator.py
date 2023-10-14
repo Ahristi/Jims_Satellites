@@ -117,7 +117,8 @@ class Simulator:
         axes[0].set_title('Roll')
         axes[0].set_xlabel('Time (s)')
         axes[0].set_ylabel('Roll (Rad)')
-     
+
+
 
         # Plot pitch
         axes[1].plot(sat.times, allAttitudes[:,1], color='green')
@@ -139,6 +140,23 @@ class Simulator:
         # Display the plots
         plt.show()
 
+    def showCharges(self):
+        """
+            Plots the state of charge of the satellite's battery throughout the orbit
+
+            Assumes that the orbit has already been propogated using simulate()
+
+            NOTE: This only plots the first satellite orbit at the moment    
+        """
+        sat = self.satellites[0]
+        fig, ax = plt.subplots()
+        ax.plot(sat.times, sat.EPS.charges)
+        #Show Eclipses
+        ax.fill_between(sat.times,sat.eclipses,alpha=0.4, transform=ax.get_xaxis_transform())
+        ax.set_xlabel("Time (s)")
+        ax.set_ylabel("Battery Charge (Whr)")
+        ax.set_title("Battery charge over mission")
+        plt.show()
 
     def calculateSunPos(self):
         """
@@ -158,8 +176,9 @@ if __name__ == "__main__":
     sat = Satellite("ISS.txt", "ISS")
     sim = Simulator([sat], [])
     sim.simulate(0,24*60*60, 10, motionEquation)
-    sim.showOrbit() 
-    sim.showAttitudes()
+    #sim.showOrbit() 
+    #sim.showAttitudes()
+    sim.showCharges()
 
 
 

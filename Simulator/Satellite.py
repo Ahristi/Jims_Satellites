@@ -12,8 +12,11 @@
 
 """
 from datetime import datetime
-
 from orbitalTransforms import *
+from EPS import *
+
+
+BATTERY_CAPACITY = 22#Whr
 
 
 class Satellite:
@@ -46,14 +49,14 @@ class Satellite:
         
         
         #Subsystems
-        self.ADCS       =   None        #Satellite ADCS subsystem
-        self.payload    =   None        #Satellite camera payload
-        self.GNSS       =   None        #Satellite GNSS
-        self.EPS        =   None        #Satellite EPS
+        self.ADCS       =   None                         #Satellite ADCS subsystem
+        self.payload    =   None                         #Satellite camera payload
+        self.GNSS       =   None                         #Satellite GNSS
+        self.EPS        =   EPS(BATTERY_CAPACITY)        #Satellite EPS
 
 
         #States
-        self.eclipses   =   []          #Boolean containing whether or not the satellite was under an eclipse
+        self.eclipses   =   [False]          #Boolean containing whether or not the satellite was under an eclipse
 
         
     def setAttitude(self):
@@ -75,9 +78,12 @@ class Satellite:
     def tick(self):
         """
             Peforms the satellite OBC functions.
-            Called every iteration of the simulation.       
+            Called every iteration of the simulation.
         
         """
+
+        #Get the amount of time passed since last tick 
+        h = self.times[-1] - self.times[-2]
 
         #ADCS routines
         self.setDesiredAttitude()
@@ -88,6 +94,7 @@ class Satellite:
 
         #Power routines
         self.eclipses.append(self.checkEclipse()) #Check if eclipse is occuring
+        self.EPS.calculateCharge(self,h)  #Calculate amount of charge in the battery
 
 
     def setDesiredAttitude(self):

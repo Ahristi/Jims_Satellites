@@ -12,12 +12,17 @@ import pyvista as pv
 from pyvista import examples
 import matplotlib.pyplot as plt
 
+SUN_R = 149597870700 #1AU
+SUN_W = -2*np.pi/(24*60*60) #Angular velocity of the sun
+
+
 class Simulator:
 
     def __init__(self, satellites, groundstations):
 
-        self.satellites = satellites            #Array of satellite objects to be simulated
+        self.satellites     = satellites        #Array of satellite objects to be simulated
         self.groundstations = groundstations    #Array of groundstations to be simulated
+        self.sunAngle       =   0               #Mean anomaly of the sun in ECI frame.
 
 
     def simulate(self, t0, t_end, h, f):
@@ -48,6 +53,10 @@ class Simulator:
                 currentGLLH = ECEF2GLLH([currentECEF[0],currentECEF[1],currentECEF[2]])
                 sat.ECEF.append(currentECEF)
                 sat.GLLH.append(currentGLLH)
+            
+                #Propogate the sun
+                self.sunAngle += SUN_W*h
+                sat.sunPos = self.calculateSunPos()
 
                 #Service the satellite's routines
                 sat.tick()
@@ -130,10 +139,25 @@ class Simulator:
         # Display the plots
         plt.show()
 
+
+    def calculateSunPos(self):
+        """
+            Calculates the position of the sun in ECI 
+            frame beased on the current sun angle. 
+
+            I probably need to check this because the sun
+            might orbit the wrong way lol.   
+        """
+        x = SUN_R*np.cos(self.sunAngle)
+        y = SUN_R*np.sin(self.sunAngle)
+        z = 0
+
+        return np.array([x,y,z])
+
 if __name__ == "__main__":
     sat = Satellite("ISS.txt", "ISS")
     sim = Simulator([sat], [])
-    sim.simulate(0,24*60*60, 1, motionEquation)
+    sim.simulate(0,24*60*60, 10, motionEquation)
     sim.showOrbit() 
     sim.showAttitudes()
 

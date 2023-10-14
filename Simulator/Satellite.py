@@ -38,6 +38,7 @@ class Satellite:
         self.ECEF       =   []          #Each position of the satellite in ECEF frame
         self.GLLH       =   []          #Each position of the satellite in GLLH frame
         self.times      =   []          #Each time during the simulation
+        self.sunPos     =   None        #The actual position of the sun in ECI frame.
 
         #Attitude
         self.attitudes  =   []          #Each satellite attitude in ECI frame.
@@ -49,6 +50,11 @@ class Satellite:
         self.payload    =   None        #Satellite camera payload
         self.GNSS       =   None        #Satellite GNSS
         self.EPS        =   None        #Satellite EPS
+
+
+        #States
+        self.eclipses   =   []          #Boolean containing whether or not the satellite was under an eclipse
+
         
     def setAttitude(self):
         """
@@ -79,10 +85,9 @@ class Satellite:
         #Position routine
 
         #Payload routines
-     
 
         #Power routines
-
+        self.eclipses.append(self.checkEclipse()) #Check if eclipse is occuring
 
 
     def setDesiredAttitude(self):
@@ -98,6 +103,24 @@ class Satellite:
         pitch = np.arctan2(z, np.sqrt(x**2 +  y**2))
         roll = 0
         self.attitudes.append(np.array([roll,pitch,yaw]))
+
+
+    def checkEclipse(self):  
+        """
+            Checks if an eclipse is occurring based on the satellite position and sun position.
+            Assumes caller is updating the sun position.
+        """
+        sunFromEarth = np.linalg.norm(self.sunPos)
+        satECI = self.states[-1][0:3]
+        sunFromSat   = np.linalg.norm(self.sunPos - satECI)
+        if (sunFromEarth < sunFromSat):
+            return True
+        
+        else:
+            return False
+
+
+
 
 
 def orbitfromTLE(TLEfile):

@@ -16,7 +16,6 @@ from orbitalTransforms import GLLH2ECEF
 from orbitalTransforms import ECEF2ECI
 from orbitalTransforms import CART2POLAR
 from orbitalTransforms import POLAR2CART
-from Satellite import Satellite
 R = 6378137
 
 
@@ -98,25 +97,3 @@ class Magnetometer:
         bFieldBody  =  POLAR2CART(bFieldBodyPolar)
 
         return bFieldBody
-
-if __name__ == "__main__":
-
-    satellite = Satellite("ISS.txt")
-    J2000 = datetime(2000, 1, 1, 12)
-    mg = Magnetometer(J2000, 0.5)
-
-    pitch = np.arctan2(satellite.X[1], satellite.X[2])
-    yaw   = np.arctan2(satellite.X[0], satellite.X[1])
-    roll = np.arctan2(np.sin(pitch)*np.cos(yaw), np.cos(pitch)*np.cos(yaw))
-    satAttitude = np.array([roll,pitch,yaw])
-
-    theta = pitch
-    psi = yaw  
-    phi = roll
-
-    C = np.array([[np.cos(theta)*np.cos(psi), np.cos(theta)*np.sin(psi), -np.sin(theta)],
-                    [np.sin(phi)*np.sin(theta)*np.cos(psi) - np.cos(phi)*np.sin(psi), np.sin(phi)*np.sin(theta)*np.sin(psi) + np.cos(phi)*np.cos(psi), np.sin(phi)*np.cos(theta)],
-                    [np.cos(phi)*np.sin(theta)*np.cos(psi) + np.sin(phi)*np.sin(psi), np.cos(phi)*np.sin(theta)*np.sin(psi)- np.sin(phi)*np.cos(psi), np.cos(phi)*np.cos(theta)]])
-    
-    print(C.T @ mg.getReading(J2000, satellite.X, satAttitude))
-    print(mg.getActualReading(J2000, satellite.X))

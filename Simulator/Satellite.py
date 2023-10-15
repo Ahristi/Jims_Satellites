@@ -14,10 +14,13 @@
 from datetime import datetime
 from orbitalTransforms import *
 from EPS import *
+from ADCS import ADCS
 
 
 BATTERY_CAPACITY = 22#Whr
 NSW_BOUNDING = [[-37.10333642191903, 140.89503281528468], [-28.07557676995773, 154.61690531304407]] #Bounding box for NSW 
+
+#Satellite States
 SAFE    =   0
 IMAGING =   1
 READOUT =   2
@@ -48,38 +51,22 @@ class Satellite:
         self.sunPos     =   None        #The actual position of the sun in ECI frame.
 
         #Attitude
-        self.attitudes  =   []          #Each satellite attitude in ECI frame.
+        self.attitudes  = []            #Each satellite attitude in ECI frame.
+        self.attitude   = []            #Current attitude in ECI frame
         self.setDesiredAttitude()       #Set the initial attitude
         
         
         #Subsystems
-        self.ADCS       =   None                         #Satellite ADCS subsystem
-        self.payload    =   None                         #Satellite camera payload
-        self.GNSS       =   None                         #Satellite GNSS
+        self.ADCS       =   ADCS("star_config.csv", self)     #Satellite ADCS subsystem
+        self.payload    =   None                              #Satellite camera payload
+        self.GNSS       =   None                              #Satellite GNSS
         self.EPS        =   EPS(BATTERY_CAPACITY,self)        #Satellite EPS
 
 
         #States
-        self.eclipses   =   [False]          #Boolean containing whether or not the satellite was under an eclipse
-        self.state      =   SAFE             #Current mode of operation
-        
-    def setAttitude(self):
-        """
-            Assumes that the control is perfect and sets the satellite
-            attitude to always be nadir pointing
-
-            #TODO: This might have to be checked
-        """
-        x = self.states[-1][0]
-        y = self.states[-1][1]
-        z = self.states[-1][2]
-
-        yaw = np.arctan2(y,x)
-        pitch = np.arctan2(z, np.sqrt(x**2 +  y**2))
-        roll = np.pi/2
-
-        self.attitude = np.array([roll,pitch,yaw])
-
+        self.eclipses   =   [False]                  #Boolean containing whether or not the satellite was under an eclipse
+        self.state      =   SAFE                     #Current mode of operation
+        self.time      =   datetime(2000, 1, 1, 12) #Used for magnetometer. Just hard coding this for now but will change later.
 
     def tick(self):
         """
@@ -92,6 +79,7 @@ class Satellite:
 
         #ADCS routines
         self.setDesiredAttitude()
+        self.ADCS.determineAttitude()
 
         #Position routine
 
@@ -117,7 +105,10 @@ class Satellite:
         yaw = np.arctan2(y,x)
         pitch = np.arctan2(z, np.sqrt(x**2 +  y**2))
         roll = 0
-        self.attitudes.append(np.array([roll,pitch,yaw]))
+        currentAttitude = np.array([roll,pitch,yaw])
+        self.attitude = currentAttitude
+        self.attitudes.append(currentAttitude)
+        
 
 
     def checkEclipse(self):  

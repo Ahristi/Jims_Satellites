@@ -12,7 +12,7 @@ import pyvista as pv
 from pyvista import examples
 import matplotlib.pyplot as plt
 from matplotlib.image import imread
-
+from tqdm import tqdm
 
 SUN_R = 149597870700 #1AU
 SUN_W = -2*np.pi/(24*60*60) #Angular velocity of the sun
@@ -37,6 +37,8 @@ class Simulator:
             h       -   time step
             f       -   orbital function for simulation
         """
+        pbar = tqdm(total=100) #Make the progress bar
+        pbar.set_description("Simulating ")
         for sat in self.satellites:
             sat.times.append(t0)
         while t0 < t_end:
@@ -62,7 +64,9 @@ class Simulator:
 
                 #Service the satellite's routines
                 sat.tick()
-         
+
+            #Update progress bar
+            pbar.update(100*h/t_end)
             t0 += h
 
     def showOrbit(self):
@@ -204,7 +208,7 @@ class Simulator:
 if __name__ == "__main__":
     sat = Satellite("ISS.txt", "ISS")
     sim = Simulator([sat], [])
-    sim.simulate(0,24*60*60, 10, motionEquation)
+    sim.simulate(0,12*60*60, 10, motionEquation)
     sim.showGroundTrack()
     sim.showOrbit() 
     sim.showAttitudes()

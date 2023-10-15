@@ -1,7 +1,6 @@
 import csv
 import numpy as np
 from orbitalTransforms import *
-from Satellite import Satellite
 
 
 """
@@ -148,32 +147,3 @@ def POLAR2CART(X):
     z     =    r * np.sin(el)
     return np.array([x,y,z])
 
-
-
-if __name__ == "__main__":
-    cross = starTracker("star_config.csv" ,0.0002)
-    #Rigil Kentauras
-    # RA = 14h 39m 36.5s, Dec = -60° 50' 02"
-    # 210.660139 long
-    # 60.833889  lat
-    # 4.37ly =  
-
-    long = 210.660139
-    lat  = 60.833889
-    r = 4.1343e+16
-
-    satellite = Satellite("ISS.txt")
-    pitch = np.arctan2(satellite.X[1], satellite.X[2])
-    yaw   = np.arctan2(satellite.X[0], satellite.X[1])
-    roll = np.arctan2(np.sin(pitch)*np.cos(yaw), np.cos(pitch)*np.cos(yaw))
-    C = directionalCosine(roll,pitch,yaw)
-
-    satAttitude = np.array([roll,pitch,yaw])
-    reading = cross.getReading("kentauras", satellite.X, satAttitude)
-
-    sigma = 0
-
-    for i in range(100):
-        sigma+=angleBetweenVectors(reading, C @ cross.getActualReading("kentauras", satellite.X))
-
-    print(sigma/100)

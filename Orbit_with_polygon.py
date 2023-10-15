@@ -43,8 +43,8 @@ def eci2ecef(ECI, time):
 
     theta = w * time
 
-    C = np.array([[np.cos(theta), np.sin(theta), 0], 
-                    [-np.sin(theta), np.cos(theta), 0], 
+    C = np.array([[np.cos(theta), -np.sin(theta), 0], 
+                    [np.sin(theta), np.cos(theta), 0], 
                     [0, 0, 1]])
         
     ECEF = np.dot(C, ECI)
@@ -198,7 +198,7 @@ def eci2lla(ECI,time,time_difference):
 mu = 3.986E14 # Gravitational Constant
 e = 0.0012306 # Eccentricity     
 i = np.radians(104) # Inclination
-omega = np.radians(63) # Right Ascension of the Ascending Node
+omega = np.radians(234.5) # Right Ascension of the Ascending Node
 w = np.radians(100) # Argument of perigee
 n_tle = 14.99449996 # Mean motion
 n = (2 * np.pi * n_tle) / (24 * 60 * 60) # Mean Motion
@@ -215,18 +215,18 @@ dt = 1 # Time step
 t = 6*60*60 # Simulation period (6 hours)
 
 ECI, time = simulator(e,i,omega,w,n,M_tle,t,dt)
-ECI2, time = simulator(e,i,omega - np.radians(0.7),w,n,M_tle,t,dt)
-ECI3, time = simulator(e,i,omega - np.radians(1.4),w,n,M_tle,t,dt)
-ECI4, time = simulator(e,i,omega - np.radians(2.1),w,n,M_tle,t,dt)
-ECI5, time = simulator(e,i,omega - np.radians(2.8),w,n,M_tle,t,dt)
-ECI6, time = simulator(e,i,omega - np.radians(3.5),w,n,M_tle,t,dt)
+ECI2, time = simulator(e,i,omega - np.radians(0.6),w,n,M_tle + np.radians(1),t,dt)
+ECI3, time = simulator(e,i,omega - np.radians(1.2),w,n,M_tle + np.radians(2),t,dt)
+ECI4, time = simulator(e,i,omega - np.radians(1.8),w,n,M_tle + np.radians(3),t,dt)
+ECI5, time = simulator(e,i,omega - np.radians(2.4),w,n,M_tle + np.radians(4),t,dt)
+ECI6, time = simulator(e,i,omega - np.radians(3.2),w,n,M_tle + np.radians(5),t,dt)
 
-phaseECI, time = simulator(e,i,omega + np.radians(170.3),w,n,M_tle,t,dt)
-phaseECI2, time = simulator(e,i,omega + np.radians(169.6),w,n,M_tle,t,dt)
-phaseECI3, time = simulator(e,i,omega + np.radians(168.9),w,n,M_tle,t,dt)
-phaseECI4, time = simulator(e,i,omega + np.radians(168.2),w,n,M_tle,t,dt)
-phaseECI5, time = simulator(e,i,omega + np.radians(167.5),w,n,M_tle,t,dt)
-phaseECI6, time = simulator(e,i,omega + np.radians(166.8),w,n,M_tle,t,dt)
+phaseECI, time = simulator(e,i,omega + np.radians(177.3),w,n,M_tle + np.radians(1),t,dt)
+phaseECI2, time = simulator(e,i,omega + np.radians(176.6),w,n,M_tle + np.radians(2),t,dt)
+phaseECI3, time = simulator(e,i,omega + np.radians(175.9),w,n,M_tle + np.radians(3),t,dt)
+phaseECI4, time = simulator(e,i,omega + np.radians(175.2),w,n,M_tle + np.radians(4),t,dt)
+phaseECI5, time = simulator(e,i,omega + np.radians(174.5),w,n,M_tle + np.radians(5),t,dt)
+phaseECI6, time = simulator(e,i,omega + np.radians(173.8),w,n,M_tle + np.radians(6),t,dt)
 
 ## Produce groundtrace
 
@@ -254,6 +254,7 @@ phaseLLA6 = eci2lla(phaseECI6,time,time_difference)
 
 # List of satellites' LLAs
 LLA_sats = [LLA, LLA2, LLA3, LLA4, LLA5, LLA6, phaseLLA, phaseLLA2, phaseLLA3, phaseLLA4, phaseLLA5, phaseLLA6]
+ECIs = [ECI, ECI2, ECI3, ECI4, ECI5, ECI6, phaseECI, phaseECI2, phaseECI3, phaseECI4, phaseECI5, phaseECI6]
 
 ## Obtain data from CSV
 # Initialize an empty list to store the vertices
@@ -274,8 +275,19 @@ with open(csv_file, 'r') as file:
 
 NSW_Polygon = Polygon(NSW_Vertices)
 
+def find_shared_values_in_all(arrays):
+    if len(arrays) < 2:
+        return []
+
+    common_values = set(arrays[0])
+
+    for i in range(1, len(arrays)):
+        common_values = common_values & set(arrays[i])
+
+    return list(common_values)
+
 ## Check when satellites are over NSW using the polygon
-def aboveNSW(satLLAs, polygon):
+def aboveNSW(satLLAs, polygon, ECIs, time):
     """
         Inputs:
             - list of satellites' LLAs over time
@@ -284,15 +296,12 @@ def aboveNSW(satLLAs, polygon):
         Outputs:
             - 
     """
-    # overhead1 = []
-    # overhead2 = []
-    # overhead3 = []
-    # overhead4 = []
-    # overhead5 = []
-    # overhead6 = []
     
     overheadLLAs = [[], [], [], [], [], [], [], [], [], [], [], []]
+    t = [[], [], [], [], [], [], [], [], [], [], [], []]
+    idx = [[], [], [], [], [], [], [], [], [], [], [], []]
 
+    # Each satellite at a time
     for i in range(len(satLLAs)):
         for j in range(len(satLLAs[i])):
             long_lat = [satLLAs[i][j][1], satLLAs[i][j][0]]
@@ -301,10 +310,29 @@ def aboveNSW(satLLAs, polygon):
             # If the point lies within the polygon (NSW)
             if polygon.contains(point):
                 overheadLLAs[i].append(long_lat)
-    
-    return overheadLLAs
+                t[i].append(time[j])
+                idx[i].append(j)
 
-overhead_NSW = aboveNSW(LLA_sats, NSW_Polygon)
+    # Determine ECI positions when all 6 are above
+    shared_values = find_shared_values_in_all(idx[:6])
+    midpoint = len(shared_values)//2
+
+    # Select midpoint (arbitrary)
+    selected_index = shared_values[midpoint]
+
+    # Get the ECIs and time at this index
+    t = time[selected_index]
+    selected_ECIs = []
+
+    for i in range(6):
+        selected_ECIs.append(ECIs[i][selected_index])
+    
+    return overheadLLAs, t, selected_ECIs
+
+overhead_NSW, t_overhead, selected_ECIs = aboveNSW(LLA_sats, NSW_Polygon, ECIs, time)
+
+print(selected_ECIs)
+print(t_overhead)
 
 # Load the BlueMarble image
 BlueMarble = mpimg.imread('BlueMarble.png')

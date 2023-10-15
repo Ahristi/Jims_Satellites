@@ -53,7 +53,7 @@ class Simulator:
                 currentGLLH = ECEF2GLLH([currentECEF[0],currentECEF[1],currentECEF[2]])
                 sat.ECEF.append(currentECEF)
                 sat.GLLH.append(currentGLLH)
-            
+                
                 #Propogate the sun
                 self.sunAngle += SUN_W*h
                 sat.sunPos = self.calculateSunPos()
@@ -150,9 +150,10 @@ class Simulator:
         """
         sat = self.satellites[0]
         fig, ax = plt.subplots()
-        ax.plot(sat.times, sat.EPS.charges)
+        ax.plot(sat.times, sat.EPS.charges, color = "r", label = "Charge")
         #Show Eclipses
-        ax.fill_between(sat.times,sat.eclipses,alpha=0.4, transform=ax.get_xaxis_transform())
+        ax.fill_between(sat.times,sat.eclipses,alpha=0.4, transform=ax.get_xaxis_transform(), label = "Eclipse")
+        ax.legend()
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Battery Charge (Whr)")
         ax.set_title("Battery charge over mission")
@@ -176,8 +177,8 @@ if __name__ == "__main__":
     sat = Satellite("ISS.txt", "ISS")
     sim = Simulator([sat], [])
     sim.simulate(0,24*60*60, 10, motionEquation)
-    #sim.showOrbit() 
-    #sim.showAttitudes()
+    sim.showOrbit() 
+    sim.showAttitudes()
     sim.showCharges()
 
 

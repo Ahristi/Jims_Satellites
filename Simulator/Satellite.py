@@ -2,7 +2,7 @@
     Satellite
 
     Python implementation of a satellite object containing the 
-    integration of different subsystems.
+    integration of different subsystems and the motion of a satellite from a simulation.
 
     NOTE:   The positions and attitudes used are the ACTUAL ones which we use for simulation and to add noise.
 
@@ -17,6 +17,11 @@ from EPS import *
 
 
 BATTERY_CAPACITY = 22#Whr
+NSW_BOUNDING = [[-37.10333642191903, 140.89503281528468], [-28.07557676995773, 154.61690531304407]] #Bounding box for NSW 
+SAFE    =   0
+IMAGING =   1
+READOUT =   2
+
 
 
 class Satellite:
@@ -36,7 +41,6 @@ class Satellite:
         #Coordinates
         X,V = keplerOrbit(params, 0)
         state0  = np.concatenate((X, V))
-
         self.states     = [state0]      #Each state (pos,vel) of the satellite in ECI frame
         self.ECEF       =   []          #Each position of the satellite in ECEF frame
         self.GLLH       =   []          #Each position of the satellite in GLLH frame
@@ -52,12 +56,12 @@ class Satellite:
         self.ADCS       =   None                         #Satellite ADCS subsystem
         self.payload    =   None                         #Satellite camera payload
         self.GNSS       =   None                         #Satellite GNSS
-        self.EPS        =   EPS(BATTERY_CAPACITY)        #Satellite EPS
+        self.EPS        =   EPS(BATTERY_CAPACITY,self)        #Satellite EPS
 
 
         #States
         self.eclipses   =   [False]          #Boolean containing whether or not the satellite was under an eclipse
-
+        self.state      =   SAFE             #Current mode of operation
         
     def setAttitude(self):
         """
@@ -79,7 +83,6 @@ class Satellite:
         """
             Peforms the satellite OBC functions.
             Called every iteration of the simulation.
-        
         """
 
         #Get the amount of time passed since last tick 
@@ -91,10 +94,11 @@ class Satellite:
         #Position routine
 
         #Payload routines
+        self.updateState()
 
         #Power routines
         self.eclipses.append(self.checkEclipse()) #Check if eclipse is occuring
-        self.EPS.calculateCharge(self,h)  #Calculate amount of charge in the battery
+        self.EPS.calculateCharge(h)  #Calculate amount of charge in the battery
 
 
     def setDesiredAttitude(self):
@@ -125,7 +129,22 @@ class Satellite:
         
         else:
             return False
+    def updateState(self):
+        """
+            Checks if we are in the NSW bounding box 
+            which means that we should be imaging
 
+            TODO: Turn the bounding box into a more complex polygon        
+        """
+        lat = self.GLLH[-1][0]
+        long = self.GLLH[-1][1]
+        newState = SAFE
+        if (lat > NSW_BOUNDING[0][0] and lat < NSW_BOUNDING[1][0]):
+            if(long > NSW_BOUNDING[0][0] and lat < NSW_BOUNDING[1][0]):
+                newState = IMAGING
+
+        self.state = newState
+        
 
 
 

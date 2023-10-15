@@ -42,8 +42,11 @@ class ADCS:
         self.sunSensor    = sunSensor(SUNSENSOR_ACCURACY)
 
         self.satellite = sat
-
         self.attitude = np.array([0,0,0])
+
+        #Datalogging
+        self.estimatedAttitudes = []
+        self.determineAttitude() #Get initial attitude
 
     def connectToSatellite(self, satellite):
         """
@@ -60,6 +63,7 @@ class ADCS:
             self.determineCoarseAttitude()
         else:
             self.determineCoarseAttitude()
+        self.estimatedAttitudes.append(self.attitude)
 
     def determineFineAttitude(self):
         """
@@ -73,7 +77,7 @@ class ADCS:
         delta_x = np.array([10,10,10])
     
         max_iter = 1000
-        tol = 1e-15
+        tol = 1e-8
         iter_count = 0
 
         #3 times length for 3 outputs and 3 rows for 3 inputs
@@ -148,11 +152,11 @@ class ADCS:
         """
 
         #Initial guess
-        guess = np.array([0.0,0.0,0.0])
+        guess = self.getDesiredAttitude()
         delta_x = np.array([10,10,10])
     
         max_iter = 1000
-        tol = 1e-15
+        tol = 1e-8
         iter_count = 0
 
         #For now just assume only sensors are magnetometer and startracker
@@ -212,17 +216,75 @@ class ADCS:
             guess += delta_x.flatten()
       
 
-            guess[0] = guess[0] % (2*np.pi)
-      
-            guess[2] = guess[2] % (2*np.pi)
+            #guess[0] = guess[0] % (2*np.pi)
+            #guess[2] = guess[2] % (2*np.pi)
             iter_count += 1
 
             if iter_count >= max_iter:
                 #print('Failed to Converge !!')
                 break
-  
+        
+
+        guess[0] = guess[0]%(2*np.pi)
+        guess[1] = guess[1]%(2*np.pi)
+        guess[2] = guess[2]%(2*np.pi)
+
+
+        #Deal with domains
+        if (guess[1] > np.pi):
+            guess[1] = guess[1] -2*np.pi
+
+        guess[0] = guess[0]
+
+        if (guess[2] > np.pi):
+            guess[2] = guess[2] -2*np.pi
+
         self.attitude = guess
 
+    def getDesiredAttitude(self):
+        """
+            Gets the desired attitude of the satellite. 
+            For the time being attitude change is assumed to be instant.
+
+            #TODO: Consider satellite state
+        """
+        x = self.satellite.states[-1][0]
+        y = self.satellite.states[-1][1]
+        z = self.satellite.states[-1][2]
+
+        yaw = np.arctan2(y,x)
+        pitch = np.arctan2(z, np.sqrt(x**2 +  y**2))
+        roll = np.pi/2
+        desiredAttitude = np.array([roll,pitch,yaw])
+        return desiredAttitude
+    
+
+def restrictDomain(eulerAngles):
+    """
+        Restricts the domain of the euler angles as follows:
+        roll: -pi to pi
+        pitch: -pi/2 to pi/2
+        yaw:  -pi to pi
+
+        Inputs:
+        eulerAngles - the attitude guess determined by NLLS
+    
+    """
+    guess = eulerAngles
+    
+
+
+
+    #Pitch
+    if (guess[1] > np.pi):
+        guess[1] =np.pi - guess[1]
+        #check for rare double wrap
+        if (guess[1] < -np.pi):
+            guess[1] = guess[1]+ np.pi/2
+
+    #Yaw
+    if (guess[2] > np.pi):
+        guess[2] = -np.pi + (guess[2] -np.pi)
 
 
 def jacobianDCM(yaw, pitch, roll, obs):

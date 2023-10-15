@@ -50,6 +50,12 @@ class Satellite:
         self.times      =   []          #Each time during the simulation
         self.sunPos     =   None        #The actual position of the sun in ECI frame.
 
+        #States
+        self.eclipses   =   [False]                  #Boolean containing whether or not the satellite was under an eclipse
+        self.state      =   SAFE                     #Current mode of operation
+        self.time      =   datetime(2000, 1, 1, 12) #Used for magnetometer. Just hard coding this for now but will change later.
+
+
         #Attitude
         self.attitudes  = []            #Each satellite attitude in ECI frame.
         self.attitude   = []            #Current attitude in ECI frame
@@ -63,10 +69,7 @@ class Satellite:
         self.EPS        =   EPS(BATTERY_CAPACITY,self)        #Satellite EPS
 
 
-        #States
-        self.eclipses   =   [False]                  #Boolean containing whether or not the satellite was under an eclipse
-        self.state      =   SAFE                     #Current mode of operation
-        self.time      =   datetime(2000, 1, 1, 12) #Used for magnetometer. Just hard coding this for now but will change later.
+
 
     def tick(self):
         """
@@ -104,7 +107,7 @@ class Satellite:
 
         yaw = np.arctan2(y,x)
         pitch = np.arctan2(z, np.sqrt(x**2 +  y**2))
-        roll = 0
+        roll = np.pi/2
         currentAttitude = np.array([roll,pitch,yaw])
         self.attitude = currentAttitude
         self.attitudes.append(currentAttitude)

@@ -114,12 +114,15 @@ class Simulator:
         """
         sat = self.satellites[0]
         allAttitudes = np.array(sat.attitudes)
+        estimatedAttitudes = np.array(sat.ADCS.estimatedAttitudes)
+        
 
         # Create subplots with 3 rows and 1 column
         fig, axes = plt.subplots(3, 1, figsize=(8, 10))
 
         # Plot roll
         axes[0].plot(sat.times, allAttitudes[:,0], color='blue')
+        axes[0].plot(sat.times, estimatedAttitudes[:,0], color='red')
         axes[0].set_title('Roll')
         axes[0].set_xlabel('Time (s)')
         axes[0].set_ylabel('Roll (Rad)')
@@ -127,14 +130,16 @@ class Simulator:
 
 
         # Plot pitch
-        axes[1].plot(sat.times, allAttitudes[:,1], color='green')
+        axes[1].plot(sat.times, allAttitudes[:,1], color='blue')
+        axes[1].plot(sat.times, estimatedAttitudes[:,1], color='red')
         axes[1].set_title('Pitch')
         axes[1].set_xlabel('Time (s)')
         axes[1].set_ylabel('Pitch (Rad)')
      
 
         # Plot yaw
-        axes[2].plot(sat.times, allAttitudes[:,2], color='red')
+        axes[2].plot(sat.times, allAttitudes[:,2], color='blue')
+        axes[2].plot(sat.times, estimatedAttitudes[:,2], color='red')
         axes[2].set_title('Yaw')
         axes[2].set_xlabel('Time (s)')
         axes[2].set_ylabel('Yaw (Rad)')
@@ -206,9 +211,9 @@ class Simulator:
 
 
 if __name__ == "__main__":
-    sat = Satellite("ISS.txt", "ISS")
+    sat = Satellite("sat1.txt", "ISS")
     sim = Simulator([sat], [])
-    sim.simulate(0,12*60*60, 10, motionEquation)
+    sim.simulate(0,4*60*60, 10, motionEquation)
     sim.showGroundTrack()
     sim.showOrbit() 
     sim.showAttitudes()

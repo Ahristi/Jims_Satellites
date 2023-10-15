@@ -11,6 +11,8 @@ from orbitalTransforms import *
 import pyvista as pv
 from pyvista import examples
 import matplotlib.pyplot as plt
+from matplotlib.image import imread
+
 
 SUN_R = 149597870700 #1AU
 SUN_W = -2*np.pi/(24*60*60) #Angular velocity of the sun
@@ -146,7 +148,7 @@ class Simulator:
 
             Assumes that the orbit has already been propogated using simulate()
 
-            NOTE: This only plots the first satellite orbit at the moment    
+            NOTE: This only plots the first satellite charge at the moment    
         """
         sat = self.satellites[0]
         fig, ax = plt.subplots()
@@ -158,6 +160,30 @@ class Simulator:
         ax.set_ylabel("Battery Charge (Whr)")
         ax.set_title("Battery charge over mission")
         plt.show()
+
+    def showGroundTrack(self):
+        """
+            Plots the ground track of one satellites orbit
+
+            Assumes that the orbit has already been propogated using simulate()
+
+            NOTE: This only plots the first satellite ground track
+        
+        """
+        #Plot the ground track in a new window 
+        sat = self.satellites[0]
+        GLLH = np.array(sat.GLLH)
+
+        fig, ax2 = plt.subplots()
+        imagePath = 'MapOfEarth.jpg'
+        image = imread(imagePath)
+        ax2.grid(alpha=0.5)
+        ax2.imshow(image, extent = [-180,180,-90,90])
+        ax2.scatter(GLLH[:,1], GLLH[:,0], s = 0.01, color ="red", zorder = 2)
+        ax2.set_title("Satellite Ground Track")
+        ax2.set_xlabel("Longitude (deg)")
+        ax2.set_ylabel("Latitude (deg)")
+
 
     def calculateSunPos(self):
         """
@@ -172,11 +198,14 @@ class Simulator:
         z = 0
 
         return np.array([x,y,z])
+    
+
 
 if __name__ == "__main__":
     sat = Satellite("ISS.txt", "ISS")
     sim = Simulator([sat], [])
     sim.simulate(0,24*60*60, 10, motionEquation)
+    sim.showGroundTrack()
     sim.showOrbit() 
     sim.showAttitudes()
     sim.showCharges()

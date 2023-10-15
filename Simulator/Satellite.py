@@ -67,6 +67,8 @@ class Satellite:
         """
             Assumes that the control is perfect and sets the satellite
             attitude to always be nadir pointing
+
+            #TODO: This might have to be checked
         """
         x = self.states[-1][0]
         y = self.states[-1][1]
@@ -105,6 +107,8 @@ class Satellite:
         """
             Sets the desired attitude of the satellite. 
             For the time being attitude change is assumed to be instant.
+
+            #TODO: Add control from magnetometer and reaction wheels (not urgent)
         """
         x = self.states[-1][0]
         y = self.states[-1][1]
@@ -120,6 +124,8 @@ class Satellite:
         """
             Checks if an eclipse is occurring based on the satellite position and sun position.
             Assumes caller is updating the sun position.
+
+            #TODO: Proper calculation of eclipse.
         """
         sunFromEarth = np.linalg.norm(self.sunPos)
         satECI = self.states[-1][0:3]

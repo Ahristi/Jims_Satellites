@@ -35,9 +35,13 @@ class payload:
         self.direction = np.array([0,0,0], dtype='int64')          # vector decribing satellites pointing direction in ECO
         self.observation = np.array([0,0,0], dtype='int64')        # vector describing ECI position satellite is pointing at
         self.bound_1_ECI = np.array([0,0,0], dtype='int64')        # Left swath bound in ECI frame
+        self.bound_1_2_ECI = np.array([0,0,0], dtype='int64')      # Second left swath bound in ECI frame
         self.bound_2_ECI = np.array([0,0,0], dtype='int64')        # Right swath bound in ECI frame
+        self.bound_2_2_ECI = np.array([0,0,0], dtype='int64')      # Second right swath bound in ECI frame
         self.bound_1 = np.array([0,0,0], dtype='int64')            # Left swath bound in lla
+        self.bound_1_2 = np.array([0,0,0], dtype='int64')          # Second left swath bound in lla
         self.bound_2 = np.array([0,0,0], dtype='int64')            # Right swath bound in lla
+        self.bound_2_2 = np.array([0,0,0], dtype='int64')          # Second right swath bound in lla
         self.pos = posvel[0:3]
         self.vel = posvel[3:]
         self.attitude = attitude
@@ -76,10 +80,15 @@ class payload:
         self.observation = self.pos - self.direction
 
         # Rotate centre observed point about velocity axis to find swath bounds
-        rotation_angle = np.deg2rad(0.175171)           # this is the earth central angle for a 32km swath, calculated by an excel sheet
+        rotation_angle = np.deg2rad(0.175171)               # this is the earth central angle for a 32km swath, calculated by an excel sheet
         axis = self.vel
         self.bound_1_ECI = np.dot(rotation_matrix(axis, rotation_angle), self.observation)
         self.bound_2_ECI = np.dot(rotation_matrix(axis, -rotation_angle), self.observation)
+
+        rotation_angle = np.deg2rad(8.98e-5)               # this is the earth central angle for a 20m bound thickness
+        axis2 = np.cross(camera.vel, camera.observation)/2e7
+        self.bound_1_2_ECI = np.dot(rotation_matrix(axis2, rotation_angle), self.bound_1_ECI)
+        self.bound_2_2_ECI = np.dot(rotation_matrix(axis2, rotation_angle), self.bound_2_ECI)
 
         # convert each bound to an ECEF then to long/lat
         self.bound_1 = ECI2ECEF(self.bound_1_ECI, self.time)
@@ -87,6 +96,12 @@ class payload:
 
         self.bound_1 = ECEF2GLLH(self.bound_1)
         self.bound_2 = ECEF2GLLH(self.bound_2)
+
+        self.bound_1_2 = ECI2ECEF(self.bound_1_2_ECI, self.time)
+        self.bound_2_2 = ECI2ECEF(self.bound_2_2_ECI, self.time)
+
+        self.bound_1_2 = ECEF2GLLH(self.bound_1_2)
+        self.bound_2_2 = ECEF2GLLH(self.bound_2_2)
 
 
 
@@ -121,21 +136,27 @@ if __name__ == "__main__":
     camera = payload(attitude, posvel, 0)
     camera.obtain_pointing()
 
-    #print(np.linalg.norm(camera.direction))
     print("position vector", camera.pos, "length =", np.linalg.norm(camera.pos))
     print("direction vector", camera.direction, "length =", np.linalg.norm(camera.direction))
     print("observation vector", camera.observation, "length =", np.linalg.norm(camera.observation))
     print("Bound 1 Lat, Long =", camera.bound_1[0:2])
+    print("Bound 1_2 Lat, Long =", camera.bound_1_2[0:2])
     print("Bound 2 Lat, Long =", camera.bound_2[0:2])
+    print("Bound 2_2 Lat, Long =", camera.bound_2_2[0:2])
+
+    axis2 = np.cross(camera.vel, camera.observation)/2e7
 
     fig = plt.figure(1)
     ax = plt.axes(projection='3d')
     ax.quiver
     ax.plot3D([0, posvel[0]], [0, posvel[1]], [0, posvel[2]], 'red', label = "ECI position")
     ax.plot3D([0, posvel[3]], [0, posvel[4]], [0, posvel[5]], 'orange', label = "ECI Velocity")
+    ax.plot3D([0, axis2[0]], [0, axis2[1]], [0, axis2[2]], 'pink', label = "axis2")
     ax.plot3D([0, camera.direction[0]], [0, camera.direction[1]], [0, camera.direction[2]], 'blue', label = "Pointing direction")
     ax.plot3D([0, camera.observation[0]], [0, camera.observation[1]], [0, camera.observation[2]], 'green', label = "Observed centre ground point")
     ax.plot3D([0, camera.bound_1_ECI[0]], [0, camera.bound_1_ECI[1]], [0, camera.bound_1_ECI[2]], 'olive')
     ax.plot3D([0, camera.bound_2_ECI[0]], [0, camera.bound_2_ECI[1]], [0, camera.bound_2_ECI[2]], 'olive')
+    ax.plot3D([0, camera.bound_1_2_ECI[0]], [0, camera.bound_1_2_ECI[1]], [0, camera.bound_1_2_ECI[2]], 'olive')
+    ax.plot3D([0, camera.bound_2_2_ECI[0]], [0, camera.bound_2_2_ECI[1]], [0, camera.bound_2_2_ECI[2]], 'olive')
     ax.legend()
     plt.show()

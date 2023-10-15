@@ -231,10 +231,13 @@ class ADCS:
 
 
         #Deal with domains
+        if (guess[0] > np.pi):
+            guess[0] = guess[0] -2*np.pi
+            
         if (guess[1] > np.pi):
             guess[1] = guess[1] -2*np.pi
+        
 
-        guess[0] = guess[0]
 
         if (guess[2] > np.pi):
             guess[2] = guess[2] -2*np.pi
@@ -254,7 +257,7 @@ class ADCS:
 
         yaw = np.arctan2(y,x)
         pitch = np.arctan2(z, np.sqrt(x**2 +  y**2))
-        roll = np.pi/2
+        roll = 0
         desiredAttitude = np.array([roll,pitch,yaw])
         return desiredAttitude
     

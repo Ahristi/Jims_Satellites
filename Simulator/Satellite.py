@@ -14,7 +14,9 @@
 from datetime import datetime
 from orbitalTransforms import *
 from EPS import *
-from ADCS import ADCS
+from ADCS import *
+from Payload import *
+
 
 
 BATTERY_CAPACITY = 22#Whr
@@ -40,7 +42,8 @@ class Satellite:
         #Orbital Parameters
         params = orbitfromTLE(TLEfile)
         self.inclination, self.rightAscension, self.eccentricity, self.argumentPerigee, self.meanAnomaly, self.meanMotion, self.tSinceVernal  = params
-        
+
+
         #Coordinates
         X,V = keplerOrbit(params, 0)
         state0  = np.concatenate((X, V))
@@ -53,7 +56,7 @@ class Satellite:
         #States
         self.eclipses   =   [False]                  #Boolean containing whether or not the satellite was under an eclipse
         self.state      =   SAFE                     #Current mode of operation
-        self.time      =   datetime(2000, 1, 1, 12) #Used for magnetometer. Just hard coding this for now but will change later.
+        self.time       =   datetime(2000, 1, 1, 12) #Used for magnetometer. Just hard coding this for now but will change later.
 
 
         #Attitude
@@ -64,7 +67,7 @@ class Satellite:
         
         #Subsystems
         self.ADCS       =   ADCS("star_config.csv", self)     #Satellite ADCS subsystem
-        self.payload    =   None                              #Satellite camera payload
+        self.payload    =   Payload(self)                     #Satellite camera payload
         self.GNSS       =   None                              #Satellite GNSS
         self.EPS        =   EPS(BATTERY_CAPACITY,self)        #Satellite EPS
 
@@ -88,6 +91,7 @@ class Satellite:
 
         #Payload routines
         self.updateState()
+        self.payload.obtain_pointing()
 
         #Power routines
         self.eclipses.append(self.checkEclipse()) #Check if eclipse is occuring
@@ -107,7 +111,7 @@ class Satellite:
 
         yaw = np.arctan2(y,x)
         pitch = np.arctan2(z, np.sqrt(x**2 +  y**2))
-        roll = np.pi/2
+        roll = 0
         currentAttitude = np.array([roll,pitch,yaw])
         self.attitude = currentAttitude
         self.attitudes.append(currentAttitude)
@@ -164,11 +168,8 @@ def orbitfromTLE(TLEfile):
     year = float(EpochYearandJulianDay[0:2])
     day = float(EpochYearandJulianDay[2:])
     daysJ2000 = year*362.25
-    epoch = (daysJ2000 + day)*24*60*60 #Time passed since J2000 in seconds
-    #Find time elapsed at vernal equinox
-    vernal = datetime(2023,3,21,21,25) - datetime(2000,1,1,12,0)
-    vernalSeconds = vernal.total_seconds()
-    tSinceVernal = epoch - vernalSeconds
+
+    tSinceVernal = (daysJ2000 + day)*24*60*60 #Time passed since J2000 in seconds
     #Line2
     inclination                =  np.deg2rad(float(tleArray[1][2]))
     rightAscension             =  np.deg2rad(float(tleArray[1][3]))

@@ -20,11 +20,13 @@ r = 3064192.46769972
 
 """
 def ECI2ECEF(X, t):
+    
     w     =    7.292115*10**(-5)
     C     =    np.array([[np.cos(w*t), -np.sin(w*t), 0], 
                          [np.sin(w*t), np.cos(w*t), 0],
                          [0,0,1]])
     ECEF = np.matmul(C,X)
+   
     return ECEF
 
 
@@ -352,16 +354,16 @@ def keplerOrbit(params, t):
     T   =   1/meanMotionSeconds
     n = 2*np.pi/T
     M_e = M0 + n*t
-
+    
     #Calculate Eccentric Anomaly
     E   =   calculateEccentricAnomaly(M_e,e)
     #Calculate True Anomaly
-
+    
     trueAnom    =   2*np.arctan(np.sqrt((1+e)/(1-e))*np.tan(E/2))
 
     #Calculate perigee
     a   =   (((T*np.sqrt(u))/(2*np.pi))**(2/3))
-        
+
     #Calculate the distance from the focus
     r   =   (a*(1-e**2)/(1+e*np.cos(trueAnom)))
 
@@ -376,10 +378,10 @@ def keplerOrbit(params, t):
 
     #Get initial state of the satellite in perifocal frame
     state = calculateState(e,h, trueAnom)
-    
+ 
     #Convert perifocal to ECI
     X, V = PFF2ECI(state[0],state[1],RAA,w,i)
-    print(X)
+  
     return X,V  # Return as a NumPy array
 
 
@@ -403,6 +405,7 @@ def calculateState(e,h,trueAnom):
     """
     r = (h**2 / u)*(1/(1+e*np.cos(trueAnom))) * np.array([np.cos(trueAnom), np.sin(trueAnom), 0])
     v = (u/h)* np.array([-np.sin(trueAnom), e + np.cos(trueAnom), 0])
+
     return r,v
 
 

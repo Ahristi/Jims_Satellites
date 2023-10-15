@@ -142,7 +142,7 @@ class Satellite:
         long = self.GLLH[-1][1]
         newState = SAFE
         if (lat > NSW_BOUNDING[0][0] and lat < NSW_BOUNDING[1][0]):
-            if(long > NSW_BOUNDING[0][0] and lat < NSW_BOUNDING[1][0]):
+            if(long > NSW_BOUNDING[0][1] and long < NSW_BOUNDING[1][1]):
                 newState = IMAGING
 
         self.state = newState
@@ -173,7 +173,7 @@ def orbitfromTLE(TLEfile):
     date1 = datetime(year=2023, month=3, day=20, hour=21, minute=24, second=0) # Date and time of most recent vernal equinox
     date2 = datetime(year=2023, month=10, day=4, hour=12, minute=14, second=0) # Date and time of TLE epoch
     tSinceVernal = (date2 - date1).total_seconds()
-    print()
+
     #Line2
     inclination                =  np.deg2rad(float(tleArray[1][2]))
     rightAscension             =  np.deg2rad(float(tleArray[1][3]))

@@ -19,6 +19,10 @@ import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 
 
+#Satellite States
+SAFE    =   0
+IMAGING =   1
+READOUT =   2
 
 class Payload:
     def __init__(self,sat):
@@ -54,6 +58,12 @@ class Payload:
             3. Finds length of direction vector from satellite to earths surface
             4. Adds direction vector to position vector to obtain pointing vector
         """
+ 
+        #Dodgy Maneouver to not image when we aren't over NSW.
+        if (self.satellite.state != IMAGING):
+            return
+
+
         pos      = self.satellite.states[-1][0:3]
         vel      = self.satellite.states[-1][3:6]
         attitude = self.satellite.ADCS.attitude 

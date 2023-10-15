@@ -62,7 +62,7 @@ class payload:
 
         # Obtain Nadir angle (angle between pointing and pos vector)
         nadir = np.arccos(np.dot(self.direction, self.pos)/(np.linalg.norm(self.direction)*np.linalg.norm(self.pos)))
-        print(np.rad2deg(nadir))
+        #print(np.rad2deg(nadir))
 
         # Finding distance from sat to earth in direction of direction vector
         R_E = 6378137  # 1 is used for testing purposes

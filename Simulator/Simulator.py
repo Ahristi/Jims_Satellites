@@ -53,8 +53,8 @@ class Simulator:
                 state_new = sat.states[-1] + (k1 + 2*k2 + 2*k3 + k4) / 6
                 sat.states.append(state_new)
                 sat.times.append(t0+h)
-
-                currentECEF = ECI2ECEF([state_new[0], state_new[1], state_new[2]],sat.tSinceVernal + t0+h)
+    
+                currentECEF = ECI2ECEF([state_new[0], state_new[1], state_new[2]], sat.tSinceVernal + t0+h)
                 currentGLLH = ECEF2GLLH([currentECEF[0],currentECEF[1],currentECEF[2]])
                 sat.ECEF.append(currentECEF)
                 sat.GLLH.append(currentGLLH)
@@ -212,9 +212,10 @@ class Simulator:
 
 
 if __name__ == "__main__":
-    sat = Satellite("sat1.txt", "ISS")
+    sat = Satellite("Satellites/sat1.txt", "ISS")
+
     sim = Simulator([sat], [])
-    sim.simulate(0,4*60*60, 10, motionEquation)
+    sim.simulate(0,6*60*60, 10, motionEquation)
     sim.showGroundTrack()
     sim.showOrbit() 
     sim.showAttitudes()

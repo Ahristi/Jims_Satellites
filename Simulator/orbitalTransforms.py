@@ -379,8 +379,7 @@ def keplerOrbit(params, t):
     
     #Convert perifocal to ECI
     X, V = PFF2ECI(state[0],state[1],RAA,w,i)
-
-
+    print(X)
     return X,V  # Return as a NumPy array
 
 

@@ -102,6 +102,7 @@ def plot_satellite_positions(constellation_eci_pos, groundstation_pos_ecef, gps_
     ax.set_ylim(-25000e3, 25000e3)
     ax.set_zlim(-25000e3, 25000e3)
 
+    plt.title('Constellation GPS/GNSS Visualisation')
     plt.legend()
     plt.show()
 

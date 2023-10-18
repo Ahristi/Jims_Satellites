@@ -166,7 +166,7 @@ class Simulator:
         ax.plot(sat.times, sat.EPS.charges, color = "r", label = "Charge")
         #Show Eclipses
         ax.fill_between(sat.times,sat.eclipses,alpha=0.4, transform=ax.get_xaxis_transform(), label = "Eclipse")
-        ax.legend()
+        ax.legend()     
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Battery Charge (Whr)")
         ax.set_title("Battery charge over mission")

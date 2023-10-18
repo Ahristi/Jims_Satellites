@@ -428,6 +428,80 @@ def calculateEccentricAnomaly(M_e,e):
     return E
 
 
+def quaternionMultiply(quaternion1, quaternion0):
+    w0, x0, y0, z0 = quaternion0
+    w1, x1, y1, z1 = quaternion1
+    return np.array([-x1 * x0 - y1 * y0 - z1 * z0 + w1 * w0,
+                     x1 * w0 + y1 * z0 - z1 * y0 + w1 * x0,
+                     -x1 * z0 + y1 * w0 + z1 * x0 + w1 * y0,
+                     x1 * y0 - y1 * x0 + z1 * w0 + w1 * z0], dtype=np.float64)
+
+
+def quarternionJacobian(q, p):
+    """
+        Computes the Jacobian matrix of the rotation with respect to the quaternion
+        q.
+
+        Inputs: 
+        q - Unit quaternion of the rotation
+        a - the Vector in the body frame  
+
+   
+    """
+    q_= q_ = np.array([q[0],-q[1],-q[2],-q[3]])
+
+    qp = quaternionMultiply(q,p)
+    pq_= quaternionMultiply(p,q_)
+
+    q0 = qp[0]
+    q1 = qp[1]
+    q2 = qp[2]
+    q3 = qp[3]
+
+    p0 = pq_[0]
+    p1 = pq_[1]
+    p2 = pq_[2]
+    p3 = pq_[3]
+
+    ISTAR = np.array([[1, 0, 0, 0],
+                      [0,-1, 0, 0],
+                      [0, 0,-1, 0],
+                      [0, 0, 0,-1]])
+
+    Q = np.array([[q0, -q1, -q2, -q3],
+                  [q1,  q0, -q3,  q2],
+                  [q2,  q3,  q0, -q1],
+                  [q3, -q2,  q1,  q0]])
+    
+    QHAT = np.array([[p0, -p1, -p2, -p3],
+                     [p1,  p0,  p3, -p2],
+                     [p2, -p3,  p0,  p1],
+                     [p3,  p2, -p1,  p0]])
+    dHdq = Q @ ISTAR + QHAT
+    return dHdq
+
+def quaternion2Euler(q):
+    """
+        Converts a quaternion to a 1x3 euler rotation
+
+        https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+    """
+    qw = q[0]
+    qx = q[1]
+    qy = q[2] 
+    qz = q[3]
+
+
+
+    e = np.array([np.arctan2(2*(qw*qx + qy*qz), 1-2*(qx**2 + qy**2)),
+                  -np.pi/2 + 2*np.arctan2(np.sqrt(1+2*(qw*qy-qx*qz)), np.sqrt(1-2*(qw*qy-qx*qz))),
+                  np.arctan2(2*(qw*qz + qx*qy), 1-2*(qy**2 + qz**2))])
+    return e
+
+
+
+
+
 if __name__ == "__main__":
             
     print(ECEF2GLLH(np.array([[-1052724.43586093],[5229852.40712444],[1966215.61789402]])))

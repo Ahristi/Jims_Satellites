@@ -86,7 +86,6 @@ class Satellite:
         self.ADCS.determineAttitude()
 
         #Position routine
-        self.getPosition(self)
 
         #Payload routines
         self.updateState()

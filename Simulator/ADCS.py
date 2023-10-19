@@ -11,6 +11,9 @@ from magnetometer import Magnetometer
 from starTracker import starTracker
 from datetime import datetime
 from sunSensor import sunSensor
+from matplotlib import pyplot as plt
+
+
 
 NUM_STAR_TRACKER = 2 
 MAGNETOMETER_ACCURACY = 0.1     #Degrees

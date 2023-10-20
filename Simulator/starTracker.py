@@ -1,7 +1,9 @@
 import csv
 import numpy as np
 from orbitalTransforms import *
-
+from skyfield.api import Star, load
+from skyfield.data import hipparcos
+from skyfield.framelib import itrs
 
 """
     starTracker
@@ -11,10 +13,26 @@ from orbitalTransforms import *
 
     Currently only takes one star for proof of concept
 """
+
+STAR_MAGNITUDE_THRESHOLD= 0.8
+
 class starTracker:
     def __init__(self, starFile, accuracy):
         self.stars    =  self.initialiseStars(starFile)
         self.accuracy =  np.deg2rad(accuracy)
+
+        #Load bright stars from skyfield
+
+        with load.open(hipparcos.URL) as f:
+            df = hipparcos.load_dataframe(f)
+        df = df[df['ra_degrees'].notnull()]
+        df = df[df['magnitude'] <= STAR_MAGNITUDE_THRESHOLD]
+        self.df = df
+        self.planets = load('de421.bsp')
+        self.earth = self.planets['earth']
+        self.ts = load.timescale()
+
+
 
     def initialiseStars(self, starFile):
         """
@@ -45,28 +63,38 @@ class starTracker:
                     
         return starData
     
-    def printStars(self):
-        """
-            Prints all the stars and their corresponding coordinates
-            within the startracker config.       
-        """
-        for key, value in self.stars.items():
-            print(f'{key}, {value}')
 
-    def getActualReading(self,starName, satPos):
+    def getActualReading(self, satPos, time = None):
         """
-            Gets the actual vector of a star from the satellite in ECI frame
+            Uses the starfield API to get the actual positions of known stars in the ECI frame
+            with respect to the satellite
 
             Inputs:
 
-            starName    - the name of the star to use in the comparison. Assumes that it is in the text file.
-            satpos      - numpy array of the satellite coordinate in ECI     
+            sat  - the satellite position in ECI frame.
+            time - datetime object of the time of observation (Currently not used)  
+        
         """
-        #Get the true vector between the satellite and the star:
-        starFromSat = self.stars[starName] - satPos
-        return starFromSat
 
-    def getReading(self,starName, satPos, satAttitude):
+        #Load bright stars from starfield (this gives around 15 observations )
+        bright_stars = Star.from_dataframe(self.df)
+        t = self.ts.utc(2000, 1, 1)
+        astrometric = self.earth.at(t).observe(bright_stars)
+        ra, dec, distance = astrometric.radec()
+        x, y, z = astrometric.frame_xyz(itrs).au
+        
+        #Build the observation Matrix
+        obs = np.zeros((len(x), 3))
+        obs[:,0] = x * 1.496e+11 #Converting AU to metres
+        obs[:,1] = y * 1.496e+11
+        obs[:,2] = z * 1.496e+11
+        #Build a matrix where each row is the position
+        pos = np.zeros((len(x), 3))
+        pos[:,] = satPos
+        obsFromSat = obs - pos
+        return obsFromSat
+
+    def getReading(self, satPos, satAttitude):
         """
             Fakes the error involved in a star tracker reading by adding
             gaussian noise to the actual vector between the satellite and
@@ -77,35 +105,48 @@ class starTracker:
             starName    - the name of the star to use in the comparison
             satpos      - numpy array of the satellite coordinate in ECI     
             satAttitude - the actual attitude of the satellite in heading, pitch, roll
-        """
-        #Get the true vector between the satellite and the star:
-        starFromSat = self.stars[starName] - satPos
+        """  
+        #Get the true vector between the satellite and the star in ECI frame:
+        starsFromSat = self.getActualReading(satPos)
 
         #Calculate directional cosine matrix
         phi = satAttitude[0]
         theta = satAttitude[1]
         psi = satAttitude[2]
-
         C = np.array([[np.cos(theta)*np.cos(psi), np.cos(theta)*np.sin(psi), -np.sin(theta)],
                      [np.sin(phi)*np.sin(theta)*np.cos(psi) - np.cos(phi)*np.sin(psi), np.sin(phi)*np.sin(theta)*np.sin(psi) + np.cos(phi)*np.cos(psi), np.sin(phi)*np.cos(theta)],
                      [np.cos(phi)*np.sin(theta)*np.cos(psi) + np.sin(phi)*np.sin(psi), np.cos(phi)*np.sin(theta)*np.sin(psi)- np.sin(phi)*np.cos(psi), np.cos(phi)*np.cos(theta)]])
         
-        #Get the coordinate of the star in the satellite body frame in polar form
-        starInBody = C @ starFromSat
-        inBodyPolar = CART2POLAR(starInBody)
-        el = inBodyPolar[0]
-        az = inBodyPolar[1]
-        R  = inBodyPolar[2]
-        
-        #Add Gausian noise
-        el = np.random.normal(el, self.accuracy)
-        az = np.random.normal(az, self.accuracy)
-        
-        #Convert back to cartesian in the body frame of the satellite
-        inBodyPolar =  np.array([el,az,R])
-        starInBody  =  POLAR2CART(inBodyPolar)
 
-        return starInBody
+        #Start building the array of readings. 
+        readings = np.zeros(np.shape(starsFromSat))
+        for i in range(len(starsFromSat)):
+            #Get star in the body frame
+            starInBody = C @ starsFromSat[i]
+            #Get polar coordinate in the satellite body frame
+            el,az,r = CART2POLAR(starInBody)
+            #Add Gausian noise based on the star tracker's accuracy
+            el = np.random.normal(el, self.accuracy)
+            az = np.random.normal(az, self.accuracy)
+            inBodyPolar =  np.array([el,az,r]) #This is with noise
+            #Convert back to cartesian coordinates in the body frame
+            starInBody  =  POLAR2CART(inBodyPolar)
+            readings[i,:] = starInBody
+     
+        return readings
+
+        """
+            inBodyPolar = CART2POLAR(starInBody)
+            
+            #Add Gausian noise
+            el = np.random.normal(el, self.accuracy)
+            az = np.random.normal(az, self.accuracy)
+            
+            #Convert back to cartesian in the body frame of the satellite
+            inBodyPolar =  np.array([el,az,R])
+            starInBody  =  POLAR2CART(inBodyPolar)
+        """
+ 
 
 def CART2POLAR(X):
     """

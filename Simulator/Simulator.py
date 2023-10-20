@@ -213,17 +213,20 @@ class Simulator:
 
 
 if __name__ == "__main__":
+
+    print("Generating Satellites...")
     sat1 = Satellite("Satellites/sat1.txt", "SAT1")
-    sat2 = Satellite("Satellites/sat2.txt", "SAT2")
-    sat3 = Satellite("Satellites/sat2.txt", "SAT3")
-    sat4 = Satellite("Satellites/sat2.txt", "SAT4")
-    sat5 = Satellite("Satellites/sat2.txt", "SAT5")
-    sat6 = Satellite("Satellites/sat2.txt", "SAT6")
-    sat7 = Satellite("Satellites/sat2.txt", "SAT7")
-    sat8 = Satellite("Satellites/sat2.txt", "SAT8")
+    #sat2 = Satellite("Satellites/sat2.txt", "SAT2")
+    #sat3 = Satellite("Satellites/sat2.txt", "SAT3")
+    #sat4 = Satellite("Satellites/sat2.txt", "SAT4")
+    #sat5 = Satellite("Satellites/sat2.txt", "SAT5")
+    #sat6 = Satellite("Satellites/sat2.txt", "SAT6")
+    #sat7 = Satellite("Satellites/sat2.txt", "SAT7")
+    #sat8 = Satellite("Satellites/sat2.txt", "SAT8")
+    print("Satellites created")
 
     sim = Simulator([sat1], [])
-    sim.simulate(0,3*60*60, 10, motionEquation)
+    sim.simulate(0,6*60*60, 10, motionEquation)
     sim.showGroundTrack()
     sim.showOrbit() 
     sim.showAttitudes()

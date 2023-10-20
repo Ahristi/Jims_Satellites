@@ -53,7 +53,7 @@ class Satellite:
         self.times      =   []          #Each time during the simulation
         self.sunPos     =   None        #The actual position of the sun in ECI frame.
 
-        #States
+        #Misc
         self.eclipses   =   [False]                  #Boolean containing whether or not the satellite was under an eclipse
         self.state      =   SAFE                     #Current mode of operation
         self.time       =   datetime(2000, 1, 1, 12) #Used for magnetometer. Just hard coding this for now but will change later.
@@ -84,9 +84,11 @@ class Satellite:
         #ADCS routines
         self.setDesiredAttitude()
         self.ADCS.determineAttitude()
+        #self.ADCS.starTracker1.getActualReading(self.states[-1][0:3])
+        self.ADCS.starTracker1.getReading(self.states[-1][0:3], self.attitude)
 
         #Position routine
-
+        
         #Payload routines
         self.updateState()
         self.payload.obtain_pointing()

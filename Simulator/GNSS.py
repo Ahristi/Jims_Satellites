@@ -2,21 +2,34 @@
 
 
 class GNSS:
-    def __init__(self, sat, GNSS):
+    def __init__(self, sat, GNSS_Satellites):
         """
-            ADCS object which simulates attitude determination in the satellite
-            Contains different sensor objects to determine the attitude using WNLLS
+
 
             Inputs:
 
-            starTrackerFile     -   Name of the csv file containing the star tracker config
-            sat                 -   Satellite object that the ADCS belongs to
-        
+
         """
         
 
         self.satellite = sat
 
         self.estimatedPositions = []
-        
+
+        self.GNSS_Satellites = GNSS_Satellites
+
+    def estimatePostion(self):
+
+        self.satellite
+
+        self.GNSS_Satellites[0].states[-1]
+
+        # INSERT CODE HERE FOR GNSS
+
+        #estimatedPositions.append()
+
+
+#Use for Testing
+# if __name__ == "__main__":
+
 

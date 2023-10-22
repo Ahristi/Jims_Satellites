@@ -131,6 +131,7 @@ class Simulator:
         _ = pl.add_mesh(mesh, texture=texture)
         pl.show()
 
+    # def showPositions(self):
 
     def showAttitudes(self):
         """

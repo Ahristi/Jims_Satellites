@@ -7,9 +7,9 @@ image = cv2.imread('Fires.jpg')
 # Convert the image to the HSV color space
 hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-#Filter out values outside the range of the "inferno" colormap
-lower_color = np.array([40, 11, 84])  
-upper_color = np.array([255, 255, 255])  
+# Filter out values outside the range of the "inferno" colormap
+lower_color = np.array([40, 11, 84])
+upper_color = np.array([255, 255, 255])
 
 # Create a binary mask using inRange
 mask = cv2.inRange(hsv_image, lower_color, upper_color)
@@ -17,38 +17,20 @@ mask = cv2.inRange(hsv_image, lower_color, upper_color)
 # Apply the mask to the original image
 result = cv2.bitwise_and(image, image, mask=mask)
 
+# Convert the result to grayscale
+gray_result = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
 
-# Create a detector with the parameters you want (you can adjust these)
-params = cv2.SimpleBlobDetector_Params()
- 
-# Filter by Area (you can adjust these values)
-params.filterByArea = True
-params.minArea = 4  # Minimum blob area
-params.maxArea = 200000  # Maximum blob area
+# Apply a binary threshold
+_, binary_result = cv2.threshold(gray_result, 1, 255, cv2.THRESH_BINARY)
 
-# Filter by Circularity (you can adjust these values)
-params.filterByCircularity = False
-params.minCircularity = 0.2  # Minimum circularity
+# Find contours in the binary result
+contours, _ = cv2.findContours(binary_result, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-# Filter by Convexity (you can adjust these values)
-params.filterByConvexity = False
-params.minConvexity = 0.87  # Minimum convexity
+# Draw the detected blobs on the original image
+image_with_blobs = image.copy()
+cv2.drawContours(image_with_blobs, contours, -1, (0, 0, 255), 2)  # Draw contours in red
 
-# Filter by Inertia (you can adjust these values)
-params.filterByInertia = False
-params.minInertiaRatio = 0.01  # Minimum inertia ratio
-
-# Create the detector
-detector = cv2.SimpleBlobDetector_create(params)
-
-# Detect blobs
-keypoints = detector.detect(result)
-
-# Draw detected blobs on the image
-result_with_keypoints = cv2.drawKeypoints(result, keypoints, np.array([]), (0, 0, 255),
-                                         cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-
-# Display the result with detected blobs
-cv2.imshow('Result with Blobs', result_with_keypoints)
+# Display the image with detected blobs
+cv2.imshow('Image with Blobs', image_with_blobs)
 cv2.waitKey(0)
 cv2.destroyAllWindows()

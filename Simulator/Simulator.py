@@ -229,7 +229,7 @@ if __name__ == "__main__":
     print("Satellites created")
 
     sim = Simulator([sat1], [])
-    sim.simulate(0,6*60*60, 100, motionEquation)
+    sim.simulate(0,6*60*60, 1, motionEquation)
     sim.showGroundTrack()
     sim.showOrbit() 
     sim.showAttitudes()

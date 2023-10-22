@@ -135,17 +135,7 @@ class starTracker:
      
         return readings
 
-        """
-            inBodyPolar = CART2POLAR(starInBody)
-            
-            #Add Gausian noise
-            el = np.random.normal(el, self.accuracy)
-            az = np.random.normal(az, self.accuracy)
-            
-            #Convert back to cartesian in the body frame of the satellite
-            inBodyPolar =  np.array([el,az,R])
-            starInBody  =  POLAR2CART(inBodyPolar)
-        """
+
  
 
 def CART2POLAR(X):

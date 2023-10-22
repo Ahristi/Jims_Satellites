@@ -56,6 +56,7 @@ class Satellite:
         #Misc
         self.eclipses   =   [False]                  #Boolean containing whether or not the satellite was under an eclipse
         self.state      =   SAFE                     #Current mode of operation
+        self.imaging    =   [SAFE]                       #Array containing boolean values if the satellite was imaging or not
         self.time       =   datetime(2000, 1, 1, 12) #Used for magnetometer. Just hard coding this for now but will change later.
 
 
@@ -95,6 +96,7 @@ class Satellite:
 
         #Power routines
         self.eclipses.append(self.checkEclipse()) #Check if eclipse is occuring
+        self.imaging.append(self.state==IMAGING)
         self.EPS.calculateCharge(h)  #Calculate amount of charge in the battery
 
 

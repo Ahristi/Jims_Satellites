@@ -13,7 +13,7 @@ from scipy.optimize import least_squares
 
     Determines the position for a given satellite dependant on the mode 
     it is in. RTK/Differential mode is higher precision but only available when in 
-    line of sight of the ground station. Regular GNSS determines the 
+    line of sight of the ground station. Regula r GNSS determines the 
     position for the remainder of the satellite's orbit.
 """
 # Defining Constants
@@ -359,6 +359,57 @@ def plot_improved_positional_errors(differences):
     plt.grid()
     plt.show()
 
+# Plotting Over Time
 
 # Plot improved positional error
 plot_improved_positional_errors(improved_differences)
+
+
+# Define the time steps over which you want to perform trilateration
+time_steps = range(0, 1000, 10)  # Define your own time steps here
+
+# List to store the error deviation over time
+error_deviation_over_time = []
+
+# Function to calculate the trilateration error for a given time step
+def trilateration_error_at_time_step(time_step):
+    # Calculate pseudo-ranges for the specific time step (you may need to adapt this part of your code)
+    pseudo_ranges = calculate_pseudo_ranges_and_apply_noise(constellation_ecef_pos, gps_satellites_ecef, noise_level)
+
+    # Perform trilateration and store the results in cube_sat_positions
+    cube_sat_positions = []
+    for pseudo_range_to_cube_sat in pseudo_ranges:
+        initial_guess = [0, 0, 0]  # Initial guess for CubeSat position
+        result = least_squares(trilateration_equations, initial_guess, args=(gps_satellites_ecef, pseudo_range_to_cube_sat, speed_of_light))
+        cube_sat_positions.append(result.x)
+
+    # Calculate differences between calculated and actual positions
+    differences = [np.array(actual_pos) - np.array(calc_pos) for actual_pos, calc_pos in zip(constellation_ecef_pos, cube_sat_positions)]
+
+    # Calculate the average total error for this time step
+    avg_total_error = np.mean([np.linalg.norm(diff) for diff in differences])
+
+    return avg_total_error
+
+# Loop through time steps and calculate error deviation
+for time_step in time_steps:
+    avg_error = trilateration_error_at_time_step(time_step)
+    error_deviation_over_time.append(avg_error)
+
+# Calculate the average of all time step errors
+average_error_overall = np.mean(error_deviation_over_time)
+
+# Plot the error deviation over time
+plt.figure(figsize=(12, 6))  # Increase the figure size
+plt.plot(time_steps, error_deviation_over_time)
+plt.axhline(y=average_error_overall, color='red', linestyle='--', label=f'Overall Average Error: {average_error_overall:.3f} meters')  # Add a red dashed line for overall average error
+plt.xlabel('Time Step')
+plt.ylabel('Total Jim-1 Error Deviation (meters)')
+plt.title('Position Error Over Time for Differential GNSS')
+
+# Set the y-axis limits from 0 to 0.1 meters
+plt.ylim(0, 0.1)
+
+plt.grid()
+plt.legend()  # Show the legend with the overall average
+plt.show()

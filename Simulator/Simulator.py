@@ -7,6 +7,7 @@
 """
 import numpy as np
 from Satellite import *
+from GNSS_Satellite import *
 from orbitalTransforms import *
 import pyvista as pv
 from pyvista import examples
@@ -20,10 +21,11 @@ SUN_W = -2*np.pi/(24*60*60) #Angular velocity of the sun
 
 class Simulator:
 
-    def __init__(self, satellites, groundstations):
+    def __init__(self, satellites, groundstations, GNSS_Satellites):
 
         self.satellites     = satellites        #Array of satellite objects to be simulated
         self.groundstations = groundstations    #Array of groundstations to be simulated
+        self.GNSS = GNSS_Satellites             #Array of GNSS Satellites
         self.sunAngle       =   0               #Mean anomaly of the sun in ECI frame.
 
 
@@ -41,7 +43,29 @@ class Simulator:
         pbar.set_description("Simulating ")
         for sat in self.satellites:
             sat.times.append(t0)
+        for GNSS in self.GNSS:
+            GNSS.times.append(t0)    
         while t0 < t_end:
+            for GNSS in self.GNSS:
+                k1 = h * f(GNSS.states[-1])
+                k2 = h * f(GNSS.states[-1] + k1/2)
+                k3 = h * f(GNSS.states[-1] + k2/2)
+                k4 = h * f(GNSS.states[-1] + k3)
+
+
+                #Propogate the satellite orbit
+                state_new = GNSS.states[-1] + (k1 + 2*k2 + 2*k3 + k4) / 6
+                GNSS.states.append(state_new)
+                GNSS.times.append(t0+h)
+                
+                currentECEF = ECI2ECEF([state_new[0], state_new[1], state_new[2]], GNSS.tSinceVernal + t0+h)
+                
+                currentGLLH = ECEF2GLLH([currentECEF[0],currentECEF[1],currentECEF[2]])
+                GNSS.ECEF.append(currentECEF)
+                GNSS.GLLH.append(currentGLLH)
+                
+               
+
             for sat in self.satellites:
                 k1 = h * f(sat.states[-1])
                 k2 = h * f(sat.states[-1] + k1/2)
@@ -66,6 +90,8 @@ class Simulator:
                 
                 #Service the satellite's routines
                 sat.tick()
+         
+            
 
             #Update progress bar
             pbar.update(100*h/t_end)
@@ -217,18 +243,20 @@ class Simulator:
 
 if __name__ == "__main__":
 
-    print("Generating Satellites...")
+    # print("Generating Satellites...")
     sat1 = Satellite("Satellites/sat1.txt", "SAT1")
-    sat2 = Satellite("Satellites/sat2.txt", "SAT2")
-    sat3 = Satellite("Satellites/sat3.txt", "SAT3")
-    sat4 = Satellite("Satellites/sat4.txt", "SAT4")
-    sat5 = Satellite("Satellites/sat5.txt", "SAT5")
-    sat6 = Satellite("Satellites/sat6.txt", "SAT6")
-    sat7 = Satellite("Satellites/sat7.txt", "SAT7")
-    sat8 = Satellite("Satellites/sat8.txt", "SAT8")
-    print("Satellites created")
+    # sat2 = Satellite("Satellites/sat2.txt", "SAT2")
+    # sat3 = Satellite("Satellites/sat3.txt", "SAT3")
+    # sat4 = Satellite("Satellites/sat4.txt", "SAT4")
+    # sat5 = Satellite("Satellites/sat5.txt", "SAT5")
+    # sat6 = Satellite("Satellites/sat6.txt", "SAT6")
+    # sat7 = Satellite("Satellites/sat7.txt", "SAT7")
+    # sat8 = Satellite("Satellites/sat8.txt", "SAT8")
+    # print("Satellites created")
 
-    sim = Simulator([sat1], [])
+    GNSS1 = GNSS_Satellite("Satellites/GNSS.txt", "SAT1")
+
+    sim = Simulator([sat1], [], [GNSS1])
     sim.simulate(0,6*60*60, 100, motionEquation)
     sim.showGroundTrack()
     sim.showOrbit() 

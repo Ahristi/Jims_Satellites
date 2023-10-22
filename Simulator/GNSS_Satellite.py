@@ -1,8 +1,7 @@
 """
-    Satellite
+    GNSS
 
-    Python implementation of a satellite object containing the 
-    integration of different subsystems and the motion of a satellite from a simulation.
+    Python implementation of a  GNSS satellite object. Removes some computationally heavy routines of the satellite object
 
     NOTE:   The positions and attitudes used are the ACTUAL ones which we use for simulation and to add noise.
 
@@ -16,7 +15,7 @@ from orbitalTransforms import *
 from EPS import *
 from ADCS import *
 from Payload import *
-from GNSS import *
+
 
 
 BATTERY_CAPACITY = 22#Whr
@@ -29,9 +28,9 @@ READOUT =   2
 
 
 
-class Satellite:
+class GNSS_Satellite:
 
-    def __init__(self, TLEfile: str, name: str, GNSS_Satellites):
+    def __init__(self, TLEfile: str, name: str):
         """
             Satellite Object
 
@@ -64,103 +63,70 @@ class Satellite:
         self.attitudes  = []            #Each satellite attitude in ECI frame.
         self.attitude   = []            #Current attitude in ECI frame
         self.setDesiredAttitude()       #Set the initial attitude
-
-
         
         
         #Subsystems
         self.ADCS       =   ADCS("star_config.csv", self)     #Satellite ADCS subsystem
         self.payload    =   Payload(self)                     #Satellite camera payload
-        self.GNSS       =   GNSS(self, GNSS_Satellites)                              #Satellite GNSS (Not yet implemented) #GNSS POS HERE
+        # self.GNSS       =   None                              #Satellite GNSS (Not yet implemented)
         self.EPS        =   EPS(BATTERY_CAPACITY,self)        #Satellite EPS
 
 
     def tick(self):
-        """
-            Peforms the satellite OBC functions.
-            Called every iteration of the simulation.
-        """
-
         #Get the amount of time passed since last tick 
         h = self.times[-1] - self.times[-2]
 
-        #Position routine
-        self.getPosition()
 
-        # #ADCS routines
-        # self.setDesiredAttitude()
-        # self.ADCS.determineAttitude()
-        # #self.ADCS.starTracker1.getActualReading(self.states[-1][0:3])
-        # self.ADCS.starTracker1.getReading(self.states[-1][0:3], self.attitude)
+    # def setDesiredAttitude(self):
+    #     """
+    #         Sets the desired attitude of the satellite. 
+    #         For the time being attitude change is assumed to be instant.
 
-        # #Payload routines
-        # self.updateState()
-        # self.payload.obtain_pointing()
+    #         #TODO: Add control from magnetometer and reaction wheels (not urgent)
+    #     """
+    #     x = self.states[-1][0]
+    #     y = self.states[-1][1]
+    #     z = self.states[-1][2]
 
-        # #Power routines
-        # self.eclipses.append(self.checkEclipse()) #Check if eclipse is occuring
-        # self.imaging.append(self.state==IMAGING)
-        # self.EPS.calculateCharge(h)  #Calculate amount of charge in the battery
-
-    def getPosition(self):
-        """
-            Determines the current estimated position of the satellite using the 
-            GNSS constellation  
-            
-        """
-        print("position determined")
-
-
-    def setDesiredAttitude(self):
-        """
-            Sets the desired attitude of the satellite. 
-            For the time being attitude change is assumed to be instant.
-
-            #TODO: Add control from magnetometer and reaction wheels (not urgent)
-        """
-        x = self.states[-1][0]
-        y = self.states[-1][1]
-        z = self.states[-1][2]
-
-        yaw = np.arctan2(y,x)
-        pitch = np.arctan2(z, np.sqrt(x**2 +  y**2))
-        roll = 0
-        currentAttitude = np.array([roll,pitch,yaw])
-        self.attitude = currentAttitude
-        self.attitudes.append(currentAttitude)
+    #     yaw = np.arctan2(y,x)
+    #     pitch = np.arctan2(z, np.sqrt(x**2 +  y**2))
+    #     roll = 0
+    #     currentAttitude = np.array([roll,pitch,yaw])
+    #     self.attitude = currentAttitude
+    #     self.attitudes.append(currentAttitude)
         
 
 
-    def checkEclipse(self):  
-        """
-            Checks if an eclipse is occurring based on the satellite position and sun position.
-            Assumes caller is updating the sun position.
+    # def checkEclipse(self):  
+    #     """
+    #         Checks if an eclipse is occurring based on the satellite position and sun position.
+    #         Assumes caller is updating the sun position.
 
-            #TODO: Proper calculation of eclipse.
-        """
-        sunFromEarth = np.linalg.norm(self.sunPos)
-        satECI = self.states[-1][0:3]
-        sunFromSat   = np.linalg.norm(self.sunPos - satECI)
-        if (sunFromEarth < sunFromSat):
-            return True
+    #         #TODO: Proper calculation of eclipse.
+    #     """
+    #     sunFromEarth = np.linalg.norm(self.sunPos)
+    #     satECI = self.states[-1][0:3]
+    #     sunFromSat   = np.linalg.norm(self.sunPos - satECI)
+    #     if (sunFromEarth < sunFromSat):
+    #         return True
         
-        else:
-            return False
-    def updateState(self):
-        """
-            Checks if we are in the NSW bounding box 
-            which means that we should be imaging
+    #     else:
+    #         return False
+    # def updateState(self):
+    #     """
+    #         Checks if we are in the NSW bounding box 
+    #         which means that we should be imaging
 
-            TODO: Turn the bounding box into a more complex polygon        
-        """
-        lat = self.GLLH[-1][0]
-        long = self.GLLH[-1][1]
-        newState = SAFE
-        if (lat > NSW_BOUNDING[0][0] and lat < NSW_BOUNDING[1][0]):
-            if(long > NSW_BOUNDING[0][1] and long < NSW_BOUNDING[1][1]):
-                newState = IMAGING
+    #         TODO: Turn the bounding box into a more complex polygon        
+    #     """
+    #     lat = self.GLLH[-1][0]
+    #     long = self.GLLH[-1][1]
+    #     newState = SAFE
+    #     if (lat > NSW_BOUNDING[0][0] and lat < NSW_BOUNDING[1][0]):
+    #         if(long > NSW_BOUNDING[0][1] and long < NSW_BOUNDING[1][1]):
+    #             newState = IMAGING
 
-        self.state = newState
+    #     self.state = newState
         
 
 
@@ -201,4 +167,4 @@ def orbitfromTLE(TLEfile):
 
 
 if __name__ == "__main__":
-    sat = Satellite("ISS.txt", "ISS")
+    GNSS = GNSS_Satellite("GNSS_TLE.txt", "GNSS")

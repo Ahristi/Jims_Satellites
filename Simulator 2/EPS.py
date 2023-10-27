@@ -2,7 +2,8 @@
     EPS - Electrical Power System
    
 """
-
+import numpy as np
+from orbitalTransforms import angleBetweenVectors
 
 #Constants for the power used by different states as determined by the power budget
 #TODO: Calculate this from the subsystem objects.
@@ -21,6 +22,8 @@ class EPS:
         
         #Pointer to the satellite it is apart of
         self.sat = sat
+        self.numPanels = 6          #Endurosat 3U panels
+        self.panelPower = 8.4
 
 
         #Current parameters
@@ -72,15 +75,39 @@ class EPS:
 
             power - power harvested in Watts      
         """
+        maxPower = self.numPanels*self.panelPower
 
-        #TODO: Actually do the calcuation based on satellite attitude
-        return 8.3
-    
+        if (self.sat.state == SAFE):
+            #In safe mode assume that we are always pointing at the sun
+            return maxPower
+        
+        elif (self.sat.state == IMAGING):
+            #We are pointing Nadir which means we don't have full view of the sun
+
+            pos      = self.sat.states[-1][0:3]
+            vel      = self.sat.states[-1][3:6]
+            attitude = self.sat.ADCS.attitude 
+
+            roll   =  attitude[0]
+            pitch  =  attitude[1]
+            yaw    =  attitude[2]        
+            sunPos = self.sat.sunPos
+            # Obtain direction unit vector
+            direction = np.array([np.cos(yaw)*np.cos(pitch), np.sin(yaw)*np.cos(pitch), np.sin(pitch)])
+            
+            #Get angle between the sun and the direction of the panels
+            theta = np.deg2rad(angleBetweenVectors(direction,sunPos))
+            return maxPower*np.cos(theta)
+        else:
+            #Handle edge cases
+            return maxPower
+
     def calculatePowerDraw(self):
         """
             Calculate the amount of power draw based on the current state.
             For the moment this is hard coded but it can be made more detailed later        
         """
+        
         if (self.sat.state == SAFE):
             return SAFE_POWER
         elif (self.sat.state == IMAGING):

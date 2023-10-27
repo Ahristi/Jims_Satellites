@@ -130,7 +130,6 @@ class Payload:
         
         """
         R_E = 6378137
-
         mappingError = eca/(2*np.pi) * 2*np.pi*R_E
         self.mappingErrors.append(mappingError)
     

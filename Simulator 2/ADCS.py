@@ -122,7 +122,7 @@ class ADCS:
         delta_x = np.array([10,10,10,10])
     
         max_iter = 1000
-        tol = 1e-8
+        tol = 1e-6
         iter_count = 0
 
         #For now just assume only sensors are magnetometer and startracker

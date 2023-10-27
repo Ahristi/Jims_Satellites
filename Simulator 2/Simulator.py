@@ -196,9 +196,16 @@ class Simulator:
         sat = self.satellites[0]
         fig, ax = plt.subplots()
         ax.plot(sat.times, sat.EPS.charges, color = "r", label = "Charge")
+
         #Show Eclipses
         points = self.getStateTimes(sat.times, sat.eclipses)
-        ax.axvspan(points[0], points[1], color='blue', alpha=0.5, label = "Eclipse")
+        for i in range(0, len(points), 2):
+            if (i+1 < len(points)):
+                if (i == 0):
+                    ax.axvspan(points[i], points[i+1], color='blue', alpha=0.5, label = "Eclipse")
+                else:
+                    ax.axvspan(points[i], points[i+1], color='blue', alpha=0.5)
+
         ax.set_ylim(bottom=0) 
         ax.set_ylim(top=23) 
         ax.legend()     

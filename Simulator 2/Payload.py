@@ -90,7 +90,7 @@ class Payload:
 
         # Obtain ECI vector of point on Earth's surface the satellite is observing
         self.observation = pos - self.direction
-        self.obtainMappingError(self.observation)
+        self.obtainMappingError(lam)
 
         # Rotate centre observed point about velocity axis to find swath bounds
         rotation_angle = np.deg2rad(0.175171)               # this is the earth central angle for a 32km swath, calculated by an excel sheet
@@ -119,30 +119,19 @@ class Payload:
         new_photo = [self.bound_1, self.bound_2, self.bound_1_2, self.bound_2_2]
         self.images.append(new_photo)
 
-    def obtainMappingError(self, observation):
+    def obtainMappingError(self, eca):
         """
             Obtains the mapping err or at the current observation in magnitude of meters
             from the true observation.
 
             Inputs:
 
-            Observation - the central coordinate of the observation made in the obtainPointing function.
+            eca - the earth central angle (RADIANS) between the observation and true pointing mad in the obtainPointing function.
         
         """
-        actualPos      = self.satellite.states[-1][0:3]
-        actualVel      = self.satellite.states[-1][3:6]
-        actualAttitude = self.satellite.attitude 
+        R_E = 6378137
 
-        roll   =  actualAttitude[0]
-        pitch  =  actualAttitude[1]
-        yaw    =  actualAttitude[2]        
-        t      =  self.satellite.times[-1] + self.satellite.tSinceVernal
-
-
-        #TODO: Write code to calculate the mapping error
-        mappingError = None
-
-
+        mappingError = eca/(2*np.pi) * 2*np.pi*R_E
         self.mappingErrors.append(mappingError)
     
 

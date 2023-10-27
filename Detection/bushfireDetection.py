@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # Load the image
-image = cv2.imread('Fires.jpg')
+image = cv2.imread('mappedfires.jpg')
 
 # Convert the image to the HSV color space
 hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)

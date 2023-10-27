@@ -58,6 +58,7 @@ class Satellite:
         self.state      =   SAFE                     #Current mode of operation
         self.imaging    =   [SAFE]                       #Array containing boolean values if the satellite was imaging or not
         self.time       =   datetime(2000, 1, 1, 12) #Used for magnetometer. Just hard coding this for now but will change later.
+        self.mappingErrors = [] 
 
 
         #Attitude

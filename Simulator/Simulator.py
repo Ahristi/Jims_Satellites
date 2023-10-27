@@ -64,6 +64,8 @@ class Simulator:
                 self.sunAngle += SUN_W*h
                 sat.sunPos = self.calculateSunPos()
                 
+            
+
                 #Service the satellite's routines
                 sat.tick()
 
@@ -117,7 +119,7 @@ class Simulator:
         sat = self.satellites[0]
         allAttitudes = np.array(sat.attitudes)
         estimatedAttitudes = np.array(sat.ADCS.estimatedAttitudes)
-        
+        points = self.getStateTimes(sat.times,sat.imaging)
 
         # Create subplots with 3 rows and 1 column
         fig, axes = plt.subplots(3, 1, figsize=(8, 10))
@@ -125,7 +127,8 @@ class Simulator:
         # Plot roll
         axes[0].plot(sat.times, allAttitudes[:,0], color='blue')
         axes[0].plot(sat.times, estimatedAttitudes[:,0], color='red')
-        axes[0].fill_between(sat.times,sat.imaging,alpha=0.4, transform=axes[0].get_xaxis_transform(), label = "Imaging", color = 'orange')
+        axes[0].axvspan(points[0], points[1], color='orange', alpha=0.5, label = "Imaging")
+        axes[0].legend()
         axes[0].set_title('Roll')
         axes[0].set_xlabel('Time (s)')
         axes[0].set_ylabel('Roll (Rad)')
@@ -135,7 +138,8 @@ class Simulator:
         # Plot pitch
         axes[1].plot(sat.times, allAttitudes[:,1], color='blue')
         axes[1].plot(sat.times, estimatedAttitudes[:,1], color='red')
-        axes[1].fill_between(sat.times,sat.imaging,alpha=0.4, transform=axes[1].get_xaxis_transform(), label = "Imaging", color = 'orange')
+        axes[1].axvspan(points[0], points[1], color='orange', alpha=0.5, label = "Imaging")
+        axes[1].legend()  
         axes[1].set_title('Pitch')
         axes[1].set_xlabel('Time (s)')
         axes[1].set_ylabel('Pitch (Rad)')
@@ -144,7 +148,8 @@ class Simulator:
         # Plot yaw
         axes[2].plot(sat.times, allAttitudes[:,2], color='blue')
         axes[2].plot(sat.times, estimatedAttitudes[:,2], color='red')
-        axes[2].fill_between(sat.times,sat.imaging,alpha=0.4, transform=axes[0].get_xaxis_transform(), label = "Imaging", color = 'orange')
+        axes[2].axvspan(points[0], points[1], color='orange', alpha=0.5, label = "Imaging")
+        axes[2].legend()     
         axes[2].set_title('Yaw')
         axes[2].set_xlabel('Time (s)')
         axes[2].set_ylabel('Yaw (Rad)')
@@ -168,7 +173,10 @@ class Simulator:
         fig, ax = plt.subplots()
         ax.plot(sat.times, sat.EPS.charges, color = "r", label = "Charge")
         #Show Eclipses
-        ax.fill_between(sat.times,sat.eclipses,alpha=0.4, transform=ax.get_xaxis_transform(), label = "Eclipse")
+        points = self.getStateTimes(sat.times, sat.eclipses)
+        ax.axvspan(points[0], points[1], color='blue', alpha=0.5, label = "Eclipse")
+        ax.set_ylim(bottom=0) 
+        ax.set_ylim(top=23) 
         ax.legend()     
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Battery Charge (Whr)")
@@ -212,20 +220,34 @@ class Simulator:
         z = 0
 
         return np.array([x,y,z])
+
+
+    def getStateTimes(self, times, eclipses):
+        """
+            Get the start and end times of a boolean array.
+            Used to determine the start and end times of eclipses and imaging.      
+        """
+        points = []
+        inEclipse = False #Bool for if we have already detect this eclipse or not
+
+
+        for i in range(len(eclipses)):
+            if eclipses[i]: 
+                if not inEclipse:
+                    points.append(times[i])
+                    inEclipse = True
+            elif inEclipse:
+                points.append(times[i])
+                inEclipse = False
+        return points
+    
     
 
-
+     
 if __name__ == "__main__":
 
     print("Generating Satellites...")
     sat1 = Satellite("Satellites/sat1.txt", "SAT1")
-    sat2 = Satellite("Satellites/sat2.txt", "SAT2")
-    sat3 = Satellite("Satellites/sat3.txt", "SAT3")
-    sat4 = Satellite("Satellites/sat4.txt", "SAT4")
-    sat5 = Satellite("Satellites/sat5.txt", "SAT5")
-    sat6 = Satellite("Satellites/sat6.txt", "SAT6")
-    sat7 = Satellite("Satellites/sat7.txt", "SAT7")
-    sat8 = Satellite("Satellites/sat8.txt", "SAT8")
     print("Satellites created")
 
     sim = Simulator([sat1], [])

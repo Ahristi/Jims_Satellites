@@ -198,7 +198,7 @@ def eci2lla(ECI,time,time_difference):
 mu = 3.986E14 # Gravitational Constant
 e = 0.0012306 # Eccentricity     
 i = np.radians(104) # Inclination
-omega = np.radians(234.5) # Right Ascension of the Ascending Node
+omega = np.radians(235) # Right Ascension of the Ascending Node
 w = np.radians(100) # Argument of perigee
 n_tle = 14.99449996 # Mean motion
 n = (2 * np.pi * n_tle) / (24 * 60 * 60) # Mean Motion
@@ -221,11 +221,11 @@ ECI4, time = simulator(e,i,omega - np.radians(1.8),w,n,M_tle + np.radians(3),t,d
 ECI5, time = simulator(e,i,omega - np.radians(2.4),w,n,M_tle + np.radians(4),t,dt)
 ECI6, time = simulator(e,i,omega - np.radians(3.2),w,n,M_tle + np.radians(5),t,dt)
 
-phaseECI, time = simulator(e,i,omega + np.radians(177.3),w,n,M_tle + np.radians(1),t,dt)
-phaseECI2, time = simulator(e,i,omega + np.radians(176.6),w,n,M_tle + np.radians(2),t,dt)
-phaseECI3, time = simulator(e,i,omega + np.radians(175.9),w,n,M_tle + np.radians(3),t,dt)
-phaseECI4, time = simulator(e,i,omega + np.radians(175.2),w,n,M_tle + np.radians(4),t,dt)
-phaseECI5, time = simulator(e,i,omega + np.radians(174.5),w,n,M_tle + np.radians(5),t,dt)
+phaseECI, time = simulator(e,i,omega + np.radians(176.8),w,n,M_tle + np.radians(1),t,dt)
+phaseECI2, time = simulator(e,i,omega + np.radians(176.2),w,n,M_tle + np.radians(2),t,dt)
+phaseECI3, time = simulator(e,i,omega + np.radians(175.6),w,n,M_tle + np.radians(3),t,dt)
+phaseECI4, time = simulator(e,i,omega + np.radians(175),w,n,M_tle + np.radians(4),t,dt)
+phaseECI5, time = simulator(e,i,omega + np.radians(174.4),w,n,M_tle + np.radians(5),t,dt)
 phaseECI6, time = simulator(e,i,omega + np.radians(173.8),w,n,M_tle + np.radians(6),t,dt)
 
 ## Produce groundtrace
@@ -257,23 +257,24 @@ LLA_sats = [LLA, LLA2, LLA3, LLA4, LLA5, LLA6, phaseLLA, phaseLLA2, phaseLLA3, p
 ECIs = [ECI, ECI2, ECI3, ECI4, ECI5, ECI6, phaseECI, phaseECI2, phaseECI3, phaseECI4, phaseECI5, phaseECI6]
 
 ## Obtain data from CSV
-# Initialize an empty list to store the vertices
-NSW_Vertices = []
+def dataFromCSV(csv_file):
+    # Initialize an empty list to store the vertices
+    vertices = []
 
-# Replace 'your_polygon_coordinates.csv' with the actual file path
-csv_file = 'NSWvertices.csv'
+    # Open and read the CSV file
+    with open(csv_file, 'r') as file:
+        csv_reader = csv.reader(file)
+        
+        # Iterate through each row in the CSV
+        for row in csv_reader:
+            # Split the row into longitude and latitude
+            longitude, latitude = map(float, row)
+            vertices.append((longitude, latitude))
 
-# Open and read the CSV file
-with open(csv_file, 'r') as file:
-    csv_reader = csv.reader(file)
-    
-    # Iterate through each row in the CSV
-    for row in csv_reader:
-        # Split the row into longitude and latitude
-        longitude, latitude = map(float, row)
-        NSW_Vertices.append((longitude, latitude))
+    return vertices
 
-NSW_Polygon = Polygon(NSW_Vertices)
+NSW_Polygon = Polygon(dataFromCSV('NSWvertices.csv'))
+NSWofInterestPolygon = Polygon(dataFromCSV('NSWverticesOfInterest.csv'))
 
 def find_shared_values_in_all(arrays):
     if len(arrays) < 2:
@@ -331,8 +332,67 @@ def aboveNSW(satLLAs, polygon, ECIs, time):
 
 overhead_NSW, t_overhead, selected_ECIs = aboveNSW(LLA_sats, NSW_Polygon, ECIs, time)
 
-print(selected_ECIs)
-print(t_overhead)
+# print(selected_ECIs)
+# print(t_overhead)
+
+## Calculating coverage
+# Define swath geometries for each satellite (as polygons)
+swath_lat = (65/111)  # Roughly, 1 degree latitude is 111 km
+swath_lon = swath_lat  # Adjust if necessary for NSW's longitude
+
+def generateSwathPolygon(satLLHs, swathWidth):
+    swathPolygons = []
+
+    for i in range(len(satLLHs)):
+        vertRight = []
+        vertLeft = []
+
+        for j in range(len(satLLHs[i])):
+            # Calculate the RHS vertices first
+            vertRight.append((satLLHs[i][j][0] + swathWidth/2, satLLHs[i][j][1]))
+
+            # Calculate the LHS vertices next
+            vertLeft.append((satLLHs[i][j][0] - swathWidth/2, satLLHs[i][j][1]))
+        
+        # Combine vertices (like starting at the top right and going clockwise)
+        vertLeft.reverse()
+        vertices = [*vertRight, *vertLeft]
+        vertices.append(vertRight[0])
+
+        swathPolygon = Polygon(vertices)
+        swathPolygons.append(swathPolygon)
+
+    return swathPolygons
+
+def mergePolygons(swathPolygons):
+    # Check if the input list is empty
+    if not swathPolygons:
+        return None
+
+    # Start with the first polygon as the base
+    merged_polygon = swathPolygons[0]
+
+    # Iterate through the remaining polygons and merge them
+    for polygon in swathPolygons[1:]:
+        merged_polygon = merged_polygon.union(polygon)
+
+    return merged_polygon
+
+swathPolygons = generateSwathPolygon(overhead_NSW, swath_lon)
+coveragePolygon = mergePolygons(swathPolygons)
+NSW_area = NSW_Polygon.area
+NSW_OI_area = NSWofInterestPolygon.area
+coverage_area = coveragePolygon.area
+
+print(NSW_area)
+print(coverage_area)
+
+coverage = coverage_area/NSW_area
+coverage_oi = coverage_area/NSW_OI_area
+
+print(f"Absolute coverage of NSW {coverage*100:.2f}%")
+print(f"Valued coverage of NSW {coverage_oi*100:.2f}%")
+
 
 # Load the BlueMarble image
 BlueMarble = mpimg.imread('BlueMarble.png')
@@ -355,20 +415,15 @@ colors = ["red", "yellow", "black", "pink", "purple", "orange", "red", "yellow",
 # Plot the ground trace
 for i in range(len(overhead_NSW)):
     ax.scatter([sublist[0] for sublist in overhead_NSW[i]], [sublist[1] for sublist in overhead_NSW[i]], s=0.5, color=colors[i], label=f'Satellite Ground Trace {i}')
+    x, y = swathPolygons[i].exterior.xy
+    ax.fill(x, y, alpha=0.4, color = colors[i])
 
+x, y = NSW_Polygon.exterior.xy
+ax.fill(x, y, alpha=0.2, color='b', label = "NSW region")
 
-# ax.plot(LLA[:,1], LLA[:,0], marker = 'o',linestyle = 'none',color='red', markersize=2, label='Satellite Ground Trace')
-# ax.plot(LLA2[:,1], LLA2[:,0], marker = 'o',linestyle = 'none',color='blue', markersize=2, label='Satellite Ground Trace 2')
-# ax.plot(LLA3[:,1], LLA3[:,0], marker = 'o',linestyle = 'none',color='orange', markersize=2, label='Satellite Ground Trace 3')
-# ax.plot(LLA4[:,1], LLA4[:,0], marker = 'o',linestyle = 'none',color='orange', markersize=2, label='Satellite Ground Trace 4')
-# ax.plot(LLA5[:,1], LLA5[:,0], marker = 'o',linestyle = 'none',color='orange', markersize=2, label='Satellite Ground Trace 3')
-# ax.plot(LLA6[:,1], LLA6[:,0], marker = 'o',linestyle = 'none',color='orange', markersize=2, label='Satellite Ground Trace 4')
+x, y = NSWofInterestPolygon.exterior.xy
+ax.fill(x, y, alpha=0.1, color="black", label = "Area of interest")
 
-# ax.plot(phaseLLA[:,1], phaseLLA[:,0], marker = 'o',linestyle = 'none',color='red', markersize=2, label='Satellite Ground Trace')
-# ax.plot(phaseLLA2[:,1], phaseLLA2[:,0], marker = 'o',linestyle = 'none',color='blue', markersize=2, label='Satellite Ground Trace 2')
-# ax.plot(phaseLLA3[:,1], phaseLLA3[:,0], marker = 'o',linestyle = 'none',color='orange', markersize=2, label='Satellite Ground Trace 3')
-# ax.plot(phaseLLA4[:,1], phaseLLA4[:,0], marker = 'o',linestyle = 'none',color='orange', markersize=2, label='Satellite Ground Trace 4')
-# ax.plot(phaseLLA5[:,1], phaseLLA5[:,0], marker = 'o',linestyle = 'none',color='orange', markersize=2, label='Satellite Ground Trace 3')
-# ax.plot(phaseLLA6[:,1], phaseLLA6[:,0], marker = 'o',linestyle = 'none',color='orange', markersize=2, label='Satellite Ground Trace 4')
+ax.legend()
 
 plt.show()

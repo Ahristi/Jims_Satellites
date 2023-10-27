@@ -269,7 +269,7 @@ if __name__ == "__main__":
     nav1 = navSatellite("navSatellites/GNSS1.txt", "GNSS1")
     print("Satellites created")
     sim = Simulator([sat1], [nav1], [])
-    sim.simulate(0,6*60*60, 10, motionEquation)
+    sim.simulate(0,6*60*60, 30, motionEquation)
     sim.showGroundTrack()
     sim.showOrbit() 
     sim.showAttitudes()

@@ -96,7 +96,7 @@ class Satellite:
 
         #Payload routines
         self.updateState()
-        self.payload.obtain_pointing()
+        self.payload.obtainPointing()
 
         #Power routines
         self.eclipses.append(self.checkEclipse()) #Check if eclipse is occuring
@@ -148,7 +148,7 @@ class Satellite:
         """
         lat = self.GLLH[-1][0]
         long = self.GLLH[-1][1]
-        newState = SAFE
+        newState = IMAGING
         if (lat > NSW_BOUNDING[0][0] and lat < NSW_BOUNDING[1][0]):
             if(long > NSW_BOUNDING[0][1] and long < NSW_BOUNDING[1][1]):
                 newState = IMAGING

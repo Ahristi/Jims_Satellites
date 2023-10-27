@@ -47,11 +47,11 @@ class Payload:
         self.bound_2 = np.array([0,0,0], dtype='int64')            # Right swath bound in lla
         self.bound_2_2 = np.array([0,0,0], dtype='int64')          # Second right swath bound in lla
 
-        self.images = []                    
+        self.images        = []                                    #Bounding boxes of each image taken                    
+        self.mappingErrors = []                                    #Magnitude of the distance between image centere and estimated centre
 
 
-
-    def obtain_pointing(self):
+    def obtainPointing(self):
         """
             1. Determines the direction unit vector of satellite
             2. Uses direction vector to find nadir angle
@@ -64,7 +64,7 @@ class Payload:
             return
 
 
-        pos      = self.satellite.states[-1][0:3]
+        pos      = self.satellite.GNSS.position
         vel      = self.satellite.states[-1][3:6]
         attitude = self.satellite.ADCS.attitude 
 
@@ -72,7 +72,6 @@ class Payload:
         pitch  =  attitude[1]
         yaw    =  attitude[2]        
         t      =  self.satellite.times[-1] + self.satellite.tSinceVernal
-
 
         # Obtain direction unit vector
         self.direction = np.array([np.cos(yaw)*np.cos(pitch), np.sin(yaw)*np.cos(pitch), np.sin(pitch)])
@@ -91,6 +90,7 @@ class Payload:
 
         # Obtain ECI vector of point on Earth's surface the satellite is observing
         self.observation = pos - self.direction
+        self.obtainMappingError(self.observation)
 
         # Rotate centre observed point about velocity axis to find swath bounds
         rotation_angle = np.deg2rad(0.175171)               # this is the earth central angle for a 32km swath, calculated by an excel sheet
@@ -116,9 +116,26 @@ class Payload:
         self.bound_1_2 = ECEF2GLLH(self.bound_1_2)
         self.bound_2_2 = ECEF2GLLH(self.bound_2_2)
 
-
         new_photo = [self.bound_1, self.bound_2, self.bound_1_2, self.bound_2_2]
         self.images.append(new_photo)
+
+    def obtainMappingError(self, observation):
+        actualPos      = self.satellite.states[-1][0:3]
+        actualVel      = self.satellite.states[-1][3:6]
+        actualAttitude = self.satellite.attitude 
+
+        roll   =  attitude[0]
+        pitch  =  attitude[1]
+        yaw    =  attitude[2]        
+        t      =  self.satellite.times[-1] + self.satellite.tSinceVernal
+
+
+        #TODO: Write code to calculate the mapping error
+        mappingError = None
+
+
+        self.mappingErrors.append(mappingError)
+    
 
 
 
@@ -151,7 +168,7 @@ if __name__ == "__main__":
     attitude = np.array([yaw + np.deg2rad(5),pitch - np.deg2rad(5),roll])
 
     camera = Payload(attitude, posvel, 0)
-    camera.obtain_pointing()
+    camera.obtainPointing()
 
     print("position vector", camera.pos, "length =", np.linalg.norm(camera.pos))
     print("direction vector", camera.direction, "length =", np.linalg.norm(camera.direction))

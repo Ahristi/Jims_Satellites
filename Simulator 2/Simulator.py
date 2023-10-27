@@ -43,7 +43,7 @@ class Simulator:
         pbar.set_description("Simulating ")
         for sat in self.satellites:
             sat.times.append(t0)
-            sat.connectGNSS(self.gnssConstellation)
+            sat.connectGNSS(self.gnssConstellation, self.groundstations)
         for gSat in self.gnssConstellation:
             gSat.times.append(t0)
 

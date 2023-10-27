@@ -148,19 +148,20 @@ class Satellite:
         """
         lat = self.GLLH[-1][0]
         long = self.GLLH[-1][1]
-        newState = IMAGING
+        newState = SAFE
         if (lat > NSW_BOUNDING[0][0] and lat < NSW_BOUNDING[1][0]):
             if(long > NSW_BOUNDING[0][1] and long < NSW_BOUNDING[1][1]):
                 newState = IMAGING
 
         self.state = newState
 
-    def connectGNSS(self, gnssConstellation):
+    def connectGNSS(self, gnssConstellation, groundStations):
         """
             Adds the GNSS satellites from a simulation into the attributes
             of the satellite to be used in GNSS position determination.     
         """
         self.gnssConstellation = gnssConstellation
+        self.GNSS.groundStations = groundStations
         return
 
 

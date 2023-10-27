@@ -56,6 +56,8 @@ class navSatellite:
         h = self.times[-1] - self.times[-2]
 
 
+
+
 def orbitfromTLE(TLEfile):
     """  
         Output orbital parameters from a TLE text file.    

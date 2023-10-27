@@ -121,7 +121,7 @@ class Payload:
 
     def obtainMappingError(self, observation):
         """
-            Obtains the mapping error at the current observation in magnitude of meters
+            Obtains the mapping err or at the current observation in magnitude of meters
             from the true observation.
 
             Inputs:

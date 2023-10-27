@@ -13,6 +13,7 @@ class GNSS:
         self.satellite = sat
         self.positionEstimates = []  #Array of the estimated positions as determined using RTK method
         self.position          = None  #Calculated position
+        self.groundStations    = []  #Array of groundstation objects
 
     def estimatePosition(self):
         gnssConstellation = self.satellite.gnssConstellation #List of GNSS satellite objects

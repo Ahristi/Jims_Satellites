@@ -120,6 +120,15 @@ class Payload:
         self.images.append(new_photo)
 
     def obtainMappingError(self, observation):
+        """
+            Obtains the mapping error at the current observation in magnitude of meters
+            from the true observation.
+
+            Inputs:
+
+            Observation - the central coordinate of the observation made in the obtainPointing function.
+        
+        """
         actualPos      = self.satellite.states[-1][0:3]
         actualVel      = self.satellite.states[-1][3:6]
         actualAttitude = self.satellite.attitude 

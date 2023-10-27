@@ -16,8 +16,14 @@ class GNSS:
         self.groundStations    = []  #Array of groundstation objects
 
     def estimatePosition(self):
-        gnssConstellation = self.satellite.gnssConstellation #List of GNSS satellite objects
-        actualPosition = self.satellite.states[-1][0:3]      #Actual position of the satellite in ECI frame
+        gnssConstellation = self.satellite.gnssConstellation        #List of GNSS satellite objects
+        actualPosition = self.satellite.states[-1][0:3]             #Actual position of the satellite in ECI frame
+        t =  self.satellite.times[-1] + self.satellite.tSinceVernal #Time since vernal equinox for ECEF conversion
+        
+
+
+
+
         
         #Just returning the actual position for now 
         self.position = actualPosition

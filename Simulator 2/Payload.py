@@ -133,9 +133,9 @@ class Payload:
         actualVel      = self.satellite.states[-1][3:6]
         actualAttitude = self.satellite.attitude 
 
-        roll   =  attitude[0]
-        pitch  =  attitude[1]
-        yaw    =  attitude[2]        
+        roll   =  actualAttitude[0]
+        pitch  =  actualAttitude[1]
+        yaw    =  actualAttitude[2]        
         t      =  self.satellite.times[-1] + self.satellite.tSinceVernal
 
 

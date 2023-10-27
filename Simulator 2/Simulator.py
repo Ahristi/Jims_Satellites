@@ -9,6 +9,7 @@ import numpy as np
 from Satellite import *
 from navSatellite import *
 from orbitalTransforms import *
+from groundStation import *
 import pyvista as pv
 from pyvista import examples
 import matplotlib.pyplot as plt
@@ -39,14 +40,19 @@ class Simulator:
             h       -   time step
             f       -   orbital function for simulation
         """
-        pbar = tqdm(total=100) #Make the progress bar
+        #Make the progress bar
+        pbar = tqdm(total=100) 
         pbar.set_description("Simulating ")
+
+        #Connect the GNSS constellation with Jim's Constellation and the groundstations
         for sat in self.satellites:
             sat.times.append(t0)
             sat.connectGNSS(self.gnssConstellation, self.groundstations)
         for gSat in self.gnssConstellation:
             gSat.times.append(t0)
 
+
+        #Begin propogating all satellite orbits
         while t0 < t_end:
             #Propogate the sun
             self.sunAngle += SUN_W*h
@@ -267,8 +273,9 @@ if __name__ == "__main__":
     print("Generating Satellites...")
     sat1 = Satellite("Satellites/sat1.txt", "SAT1")
     nav1 = navSatellite("navSatellites/GNSS1.txt", "GNSS1")
+    gs = groundStation(-32.9986, 148.2621, 415)
     print("Satellites created")
-    sim = Simulator([sat1], [nav1], [])
+    sim = Simulator([sat1], [nav1], [gs])
     sim.simulate(0,6*60*60, 30, motionEquation)
     sim.showGroundTrack()
     sim.showOrbit() 

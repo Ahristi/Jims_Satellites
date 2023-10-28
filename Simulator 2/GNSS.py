@@ -1,5 +1,4 @@
-import numpy as np
-from orbitalTransforms import *
+
 
 """
     GNSS
@@ -11,6 +10,13 @@ from orbitalTransforms import *
 
 
 """
+
+import numpy as np
+from orbitalTransforms import *
+from scipy.optimize import least_squares
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
 #Satellite States
 SAFE    =   0       #Used when not in LOS and regular GNSS is requires.
 IMAGING =   1       #Used when mapping and high precision GNSS required.
@@ -22,8 +28,9 @@ class GNSS:
     def __init__(self, sat):
         self.satellite = sat
         self.positionEstimates = []  #Array of the estimated positions as determined using RTK method
-        self.position          = None  #Calculated position
+        self.position          = []  #Calculated position
         self.groundStations    = []  #Array of groundstation objects
+        self.noise_level = 1e-10  # Noise associated with GNSS Satellite
 
     def estimatePosition(self):
         gnssConstellation = self.satellite.gnssConstellation        #List of GNSS satellite objects
@@ -33,7 +40,14 @@ class GNSS:
         speed_of_light = 299792458                                  #Speed of light used for trilateration
 
         #convert ECI Actual to ECEF Actual
-        actualECEF = ECI2ECEF(actualPosition)
+        actualECEF = ECI2ECEF(actualPosition, t)
+
+        gnssConstellationECEF = []
+
+        #convert GNSS ECI to ECEF
+        for gnssECI in gnssConstellation:
+            gnssECEF = ECI2ECEF(gnssECI, t)
+            gnssConstellationECEF.append(gnssECEF)
 
         def calculate_distance(point1, point2):
             # Calculate the distance between two points
@@ -72,32 +86,31 @@ class GNSS:
 
 
 
-        # Determine GNSS Differential Correction based on the state
-        # Check the state of the satellite
-        if state == "IMAGING":
-            # Code to execute when the state is IMAGING (high precision differential GNSS)
-            # For example, you can calculate and store the estimated position
-            self.position = actualPosition
-            self.positionEstimates.append(self.position)
-        elif state == "SAFE":
-            # Code to execute when the state is SAFE (lower precision regular GNSS)
-            # You can do something else here
-            pass  # Placeholder for SAFE state actions
+        # # Determine GNSS Differential Correction based on the state
+        # # Check the state of the satellite
+        # if state == "IMAGING":
+        #     # Code to execute when the state is IMAGING (high precision differential GNSS)
+        #     # For example, you can calculate and store the estimated position
+        #     self.position = actualPosition
+        #     self.positionEstimates.append(self.position)
+        # elif state == "SAFE":
+        #     # Code to execute when the state is SAFE (lower precision regular GNSS)
+        #     # You can do something else here
+        #     pass  # Placeholder for SAFE state actions
 
 
 
 
 
 
-
+        #***********************************************************************
         #Postioning Main Code
-        
-
 
         #Just returning the actual position for now 
         self.position = actualPosition                  #Return the calculated GNSS Position
         self.positionEstimates.append(self.position)    #Append the calculated GNSS Position
-
+        
+        #***********************************************************************
 
 if __name__ == "__main__":
     print("Running GNSS test")
@@ -119,15 +132,22 @@ if __name__ == "__main__":
     np.array([-20500000, 0, 0]),  # GNSS Satellite 2
     np.array([0, 25000000, -13000000]),  # GNSS Satellite 3
     np.array([-17500000, 0, -13000000])  # GNSS Satellite 4
-]
+    ]
+
+    # Set the Satellite Times
+    satellite.times = [11692]
 
     # Set the state of the satellite (assuming a single state for all GNSS satellites)
     satellite.state = "IMAGING"
 
+    satellite.states = [np.array([ -4170263.97479639,  4372069.56522638, -3434042.26023409])]
 
-    # Call the estimatePosition method to test it
-    gnss.estimatePosition()
+    # Create an instance of the GNSS class and call the estimatePosition method
+    gnss_receiver = GNSS(satellite)
+    gnss_receiver.estimatePosition()
 
-    # Print or use the results
-    print("Estimated Position:", gnss.position)
-    print("Position Estimates:", gnss.positionEstimates)
+    # # Print or use the results
+    # print("Actual Position:", GNSS.position)
+    # print("Position Estimates:", GNSS.positionEstimates)
+
+    print("Success")

@@ -83,10 +83,19 @@ class GNSS:
                 time = calculate_time_from_distance(distance)
                 noisy_time = apply_noise_to_time(time, noise_level)
                 pseudo_range_to_cube_sat.append(noisy_time)
-                
+
             return pseudo_range_to_cube_sat
         
 
+        def trilateration_equations(cube_sat_position, gps_satellite_positions, pseudo_ranges, speed_of_light):
+            equations = []
+            for i in range(len(gps_satellite_positions)):
+                distance = pseudo_ranges[i] * speed_of_light
+                delta_x = cube_sat_position[0] - gps_satellite_positions[i][0]
+                delta_y = cube_sat_position[1] - gps_satellite_positions[i][1]
+                delta_z = cube_sat_position[2] - gps_satellite_positions[i][2]
+                equations.append((delta_x ** 2 + delta_y ** 2 + delta_z ** 2) - (distance ** 2))
+            return equations
 
 
 
@@ -111,12 +120,20 @@ class GNSS:
         #***********************************************************************
         #Postioning Main Code
 
+        # Generating Pseudo Ranges
         pseudo_ranges = calculate_pseudo_ranges_and_apply_noise(actualECEF, gnssConstellationECEF, self.noise_level)
         print(pseudo_ranges)
+
+        # Perform trilateration and store the results in cube_sat_positions
+        initial_guess = [0, 0, 0]  # Initial guess for CubeSat position
+        result = least_squares(trilateration_equations, initial_guess, args=(gnssConstellationECEF, pseudo_ranges, speed_of_light))
+        cube_sat_position = result.x
         
+        print("Calculated Position Found: ", cube_sat_position)
+ 
 
         #Just returning the actual position for now 
-        self.position = actualPosition                  #Return the calculated GNSS Position
+        self.position = cube_sat_position                  #Return the calculated GNSS Position
         self.positionEstimates.append(self.position)    #Append the calculated GNSS Position
         #***********************************************************************
 

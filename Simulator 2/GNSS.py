@@ -39,6 +39,9 @@ class GNSS:
         state = self.satellite.state                                #The state of the satellite 
         speed_of_light = 299792458                                  #Speed of light used for trilateration
 
+        #**********************************************************
+        #Frame conversions to ECEF
+
         #convert ECI Actual to ECEF Actual
         actualECEF = ECI2ECEF(actualPosition, t)
 
@@ -48,6 +51,11 @@ class GNSS:
         for gnssECI in gnssConstellation:
             gnssECEF = ECI2ECEF(gnssECI, t)
             gnssConstellationECEF.append(gnssECEF)
+
+        #convert Groundstation GLLH to ECEF
+        gsECEF = GLLH2ECEF(self.groundStations)
+
+        #**********************************************************
 
         def calculate_distance(point1, point2):
             # Calculate the distance between two points
@@ -65,21 +73,18 @@ class GNSS:
             noisy_time = time + noise
             return noisy_time
 
-        def calculate_pseudo_ranges_and_apply_noise(cube_satellite_positions, gps_satellite_positions, noise_level):
-            pseudo_ranges = []
+        def calculate_pseudo_ranges_and_apply_noise(cube_satellite_position, gps_satellite_positions, noise_level):
 
-            for cube_satellite in cube_satellite_positions:
-                pseudo_range_to_cube_sat = []
-                for gps_satellite in gps_satellite_positions:
-                    # Calculate the distance between the CubeSat and the GPS satellite
-                    distance = calculate_distance(cube_satellite, gps_satellite)
-                    # Convert distance to time and apply noise
-                    time = calculate_time_from_distance(distance)
-                    noisy_time = apply_noise_to_time(time, noise_level)
-                    pseudo_range_to_cube_sat.append(noisy_time)
-                pseudo_ranges.append(pseudo_range_to_cube_sat)
-
-            return pseudo_ranges
+            pseudo_range_to_cube_sat = []
+            for gps_satellite in gps_satellite_positions:
+                # Calculate the distance between the CubeSat and the GPS satellite
+                distance = calculate_distance(cube_satellite_position, gps_satellite)
+                # Convert distance to time and apply noise
+                time = calculate_time_from_distance(distance)
+                noisy_time = apply_noise_to_time(time, noise_level)
+                pseudo_range_to_cube_sat.append(noisy_time)
+                
+            return pseudo_range_to_cube_sat
         
 
 
@@ -106,10 +111,13 @@ class GNSS:
         #***********************************************************************
         #Postioning Main Code
 
+        pseudo_ranges = calculate_pseudo_ranges_and_apply_noise(actualECEF, gnssConstellationECEF, self.noise_level)
+        print(pseudo_ranges)
+        
+
         #Just returning the actual position for now 
         self.position = actualPosition                  #Return the calculated GNSS Position
         self.positionEstimates.append(self.position)    #Append the calculated GNSS Position
-        
         #***********************************************************************
 
 if __name__ == "__main__":
@@ -144,6 +152,7 @@ if __name__ == "__main__":
 
     # Create an instance of the GNSS class and call the estimatePosition method
     gnss_receiver = GNSS(satellite)
+    gnss_receiver.groundStations = (-32.9986, 148.2621, 415)
     gnss_receiver.estimatePosition()
 
     # # Print or use the results

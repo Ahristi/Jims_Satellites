@@ -40,6 +40,8 @@ class Satellite:
             TLEfile - Name of the .txt file containing the TLE of the satellite
             name    - name of the satellite        
         """
+        self.name = name
+
         #Orbital Parameters
         params = orbitfromTLE(TLEfile)
         self.inclination, self.rightAscension, self.eccentricity, self.argumentPerigee, self.meanAnomaly, self.meanMotion, self.tSinceVernal  = params

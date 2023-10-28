@@ -283,7 +283,7 @@ if __name__ == "__main__":
     gs = groundStation(-32.9986, 148.2621, 415)
     print("Satellites created")
     sim = Simulator([sat1], [nav1], [gs])
-    sim.simulate(0,6*60*60, 30, motionEquation)
+    sim.simulate(0,6*60*60, 5, motionEquation)
     sim.showGroundTrack()
     sim.showOrbit() 
     sim.showAttitudes()

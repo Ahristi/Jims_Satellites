@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 #Satellite States
-SAFE    =   0       #Used when not in LOS and regular GNSS is requires.
+SAFE    =   0       #Used when not in LOS and regular GNSS is required.
 IMAGING =   1       #Used when mapping and high precision GNSS required.
 READOUT =   2
 
@@ -87,13 +87,13 @@ class GNSS:
             return pseudo_range_to_cube_sat
         
 
-        def trilateration_equations(cube_sat_position, gps_satellite_positions, pseudo_ranges, speed_of_light):
+        def trilateration_equations(cube_sat_position, gnss_satellite_positions, pseudo_ranges, speed_of_light):
             equations = []
-            for i in range(len(gps_satellite_positions)):
+            for i in range(len(gnss_satellite_positions)):
                 distance = pseudo_ranges[i] * speed_of_light
-                delta_x = cube_sat_position[0] - gps_satellite_positions[i][0]
-                delta_y = cube_sat_position[1] - gps_satellite_positions[i][1]
-                delta_z = cube_sat_position[2] - gps_satellite_positions[i][2]
+                delta_x = cube_sat_position[0] - gnss_satellite_positions[i][0]
+                delta_y = cube_sat_position[1] - gnss_satellite_positions[i][1]
+                delta_z = cube_sat_position[2] - gnss_satellite_positions[i][2]
                 equations.append((delta_x ** 2 + delta_y ** 2 + delta_z ** 2) - (distance ** 2))
             return equations
 
@@ -132,7 +132,7 @@ class GNSS:
         print("Calculated Position Found: ", cube_sat_position)
  
 
-        #Just returning the actual position for now 
+        #Assign the calculated position and append it to the list of determined positions
         self.position = cube_sat_position                  #Return the calculated GNSS Position
         self.positionEstimates.append(self.position)    #Append the calculated GNSS Position
         #***********************************************************************

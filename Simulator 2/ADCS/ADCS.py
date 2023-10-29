@@ -221,6 +221,99 @@ class ADCS:
         return guess
 
 
+    def determineUltraFineAttitude(self):
+        """
+            determinUltraFineAttitude:
+
+            Determines the satellite attitude by fusing all sensors.        
+        """
+
+        #Initial guess
+        guess = np.array([1.0,1.0,1.0,1.0])
+        delta_x = np.array([10,10,10,10])
+    
+        max_iter = 1000
+        tol = 1e-8
+        iter_count = 0
+        actualAttitude = self.satellite.attitude
+        X = self.satellite.states[-1][0:3]
+
+
+        #Get the positions of the stars in ECI frame wrt satellite
+        actualStars = self.starTracker1.getActualReading(X)
+        # Convert to quaternions
+        actualStarsQ = np.zeros((len(actualStars), 4)) 
+        actualStarsQ[:, 1:4] = actualStars/np.linalg.norm(actualStars)
+
+
+        #Get star readings in satellite body frame wrt satellite
+        starTrackerReading = self.starTracker1.getReading(X, actualAttitude)
+        # Convert to quaternions
+        starTrackerReadingQ = np.zeros((len(starTrackerReading), 4)) 
+        starTrackerReadingQ[:, 1:4] = starTrackerReading/np.linalg.norm(starTrackerReading)
+
+        #Make empty Jacobian matrix
+        H = np.zeros((4 * 5 + 8, 4))
+
+        #Make empty residuals matrix
+        delta_y = np.ones((4 *  5 + 8, 1))*1000
+        #Get readings from our sensors
+        magnetReadingQ = np.zeros(4)
+        magnetReading = self.magnetometer.getReading(self.satellite.time, X, actualAttitude)
+        magnetReading = magnetReading/np.linalg.norm(magnetReading)
+        magnetReadingQ[1:4] = magnetReading
+
+        sunReadingQ = np.zeros(4)
+        sunReading = self.sunSensor.getReading(actualAttitude)
+        sunReading =sunReading/np.linalg.norm(sunReading)
+        sunReadingQ[1:4] = sunReading
+
+        #Get the actual values which are known references
+        magnetActualQ = np.zeros(4)
+        magnetActual = self.magnetometer.getActualReading(self.satellite.time, X)
+        magnetActual = magnetActual/np.linalg.norm(magnetActual)
+        magnetActualQ[1:4] = magnetActual
+
+        sunActualQ = np.zeros(4)
+        sunActual = self.sunSensor.getActualReading()
+        sunActual = sunActual/np.linalg.norm(sunActual)
+        sunActualQ[1:4] = sunActual
+
+        while np.linalg.norm(delta_x) > tol:
+            #Convert the rotation quaternion to a unit quaternion
+            q = guess
+            q /= np.linalg.norm(q)               
+            q_ = np.array([q[0],-q[1],-q[2],-q[3]])
+            H_magnet        =   quarternionJacobian(guess, magnetReadingQ)
+            H_sun           =   quarternionJacobian(guess, sunReadingQ)
+
+            W = np.eye(28)   
+            #Build the H matrix and residuals vector
+            for i in range(5):
+                H[4 * i:  4 * (i + 1), :] = quarternionJacobian(guess, starTrackerReadingQ[i])
+                actualObs   = actualStarsQ[i]
+                expectedObs = quaternionMultiply(quaternionMultiply(q,starTrackerReadingQ[i]),q_)
+                delta_y[4 * i:4 * (i + 1), 0] = (actualObs - expectedObs)
+                W[4 * i:4 * (i + 1), 4 * i:4 * (i + 1)] = np.eye(4) * 1000/(STARTRACKER_ACCURACY**2)
+                
+            #Add the magnetometer and sun tracker
+            H[20:24, :] = H_magnet
+            H[24:28, :] = H_sun
+            delta_y[20:24, 0] =   (magnetActualQ    - quaternionMultiply(quaternionMultiply(q,magnetReadingQ),q_)) 
+            delta_y[24:28, 0] =   (sunActualQ    - quaternionMultiply(quaternionMultiply(q,sunReadingQ),q_)) 
+            W[20:24,20:24] = np.eye(4) * 0.1/(MAGNETOMETER_ACCURACY**2) 
+            W[24:28,24:28] = np.eye(4) * 0.1/(SUNSENSOR_ACCURACY**2) 
+    
+            # Use non-linear least squares to estimate error in x
+            delta_x = np.linalg.inv(H.T @ W @  H) @ H.T @ W @ delta_y
+            guess += delta_x.flatten()
+            iter_count += 1
+
+            if iter_count >= max_iter:
+                #print('Failed to Converge !!')
+                break
+        e = quaternion2Euler(guess)
+        self.attitude = e
 
 def jacobianDCM(yaw, pitch, roll, obs):
     """ 

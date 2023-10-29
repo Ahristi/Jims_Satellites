@@ -8,12 +8,12 @@ import numpy as np
 from PIL import Image
 
 # Open the TIFF file
-tiff_file = "eeResults/piliga_historic.tif"
+tiff_file = "eeResults/sydney.tif"
 image = Image.open(tiff_file)
 
 
 image = np.array(image)
-cv2.imwrite("eeResults/piliga_historic.jpg", cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+cv2.imwrite("eeResults/sydney.jpg", cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
 
 # Apply filter
 lower1 = np.array([50, 0, 0])

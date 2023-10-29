@@ -239,29 +239,42 @@ class Simulator:
 
     def showPositions(self):
         print("Showing Positions:")
-        sat = self.satellites[12]  # Assuming you want to plot the positions of the first satellite
-        sat_positions = np.array(sat.GNSS.positionEstimates)  
-        x = sat_positions[:, 0]  # Extract X coordinates
-        y = sat_positions[:, 1]  # Extract Y coordinates
-        z = sat_positions[:, 2]  # Extract Z coordinates
+        sat = self.satellites[0]
+        sat_positions = np.array(sat.GNSS.positionEstimates)
+        true_values = sat.states  # Assuming the first three elements are XYZ positions
 
-        # Create a 3D scatter plot
+        # Initialize empty lists to store errors for each coordinate (X, Y, Z)
+        error_x_list = []
+        error_y_list = []
+        error_z_list = []
+        
+        for timestamp in range(len(sat_positions)):
+            # Calculate the error in X, Y, and Z coordinates for each position at the current timestamp
+            error_x = sat_positions[timestamp][0] - true_values[timestamp][0]
+            error_y = sat_positions[timestamp][1] - true_values[timestamp][1]
+            error_z = sat_positions[timestamp][2] - true_values[timestamp][2]
+
+            error_x_list.append(error_x)
+            error_y_list.append(error_y)
+            error_z_list.append(error_z)
+
+            
+        print("Error test z: ", sat_positions[0][0], true_values[0][0])
+        print("Error test y: ", sat_positions[0][1], true_values[0][1])
+        print("Error test z: ", sat_positions[0][2], true_values[0][2])
+        # Create a 3D scatter plot for individual errors in X, Y, and Z coordinates
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(x, y, z, c='b', marker='o', label='Satellite Positions')
-
-        # Label the axes
-        ax.set_xlabel('X Label')
-        ax.set_ylabel('Y Label')
-        ax.set_zlabel('Z Label')
-
-        # Add a legend
-        ax.legend()
-
-        # Show the plot
+        
+        ax.scatter(error_x_list, error_y_list, error_z_list, c='b', marker='o', label='Error in X, Y, Z')
+        
+        ax.set_xlabel('Error in X')
+        ax.set_ylabel('Error in Y')
+        ax.set_zlabel('Error in Z')
+        ax.set_title('Individual Errors in X, Y, Z Coordinates')
+        
+        plt.legend()
         plt.show()
-
-
     def calculateSunPos(self):
         """
             Calculates the position of the sun in ECI 
@@ -310,7 +323,7 @@ if __name__ == "__main__":
     gs = groundStation(-32.9986, 148.2621, 415)
     print("Satellites created")
     sim = Simulator([sat1], [nav1,nav2,nav3,nav4], [gs])
-    sim.simulate(0,24*60*60,5, motionEquation)
+    sim.simulate(0,2*60*60,5, motionEquation)
     sim.showGroundTrack()
     sim.showOrbit() 
     # sim.showAttitudes()

@@ -90,7 +90,6 @@ class Satellite:
         #ADCS routines
         self.setDesiredAttitude()
         self.ADCS.determineAttitude()
-        #self.ADCS.starTracker1.getActualReading(self.states[-1][0:3])
         self.ADCS.starTracker1.getReading(self.states[-1][0:3], self.attitude)
 
         #Position routine

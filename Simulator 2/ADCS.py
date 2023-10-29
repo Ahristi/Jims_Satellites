@@ -121,7 +121,7 @@ class ADCS:
         guess = np.array([1.0,1.0,1.0,1.0])
         delta_x = np.array([10,10,10,10])
     
-        max_iter = 300
+        max_iter = 200
         tol = 1e-5
         iter_count = 0
 
@@ -203,7 +203,7 @@ class ADCS:
         delta_x = np.array([10,10,10,10])
     
         max_iter = 1000
-        tol = 1e-7
+        tol = 1e-6
         iter_count = 0
         actualAttitude = self.satellite.attitude
         X = self.satellite.states[-1][0:3]

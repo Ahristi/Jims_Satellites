@@ -44,7 +44,7 @@ class GNSS:
 
         #convert ECI Actual to ECEF Actual
         actualECEF = ECI2ECEF(actualPosition, t)
-
+            
         gnssConstellationECEF = []
 
 
@@ -56,7 +56,6 @@ class GNSS:
 
         #convert Groundstation GLLH to ECEF
         groundStation = self.groundStations[0].GLLH
-
         gsECEF = GLLH2ECEF(groundStation)
 
         #**********************************************************
@@ -126,17 +125,12 @@ class GNSS:
 
         # Generating Pseudo Ranges
         pseudo_ranges = calculate_pseudo_ranges_and_apply_noise(actualECEF, gnssConstellationECEF, self.noise_level)
-        print(pseudo_ranges)
+
 
         # Perform trilateration and store the results in cube_sat_positions
         initial_guess = [0, 0, 0]  # Initial guess for CubeSat position
         result = least_squares(trilateration_equations, initial_guess, args=(gnssConstellationECEF, pseudo_ranges, speed_of_light))
-        cube_sat_position = result.x
-        
-        print("Calculated Position Found: ", cube_sat_position)
-        print("Actual: ", self.satellite.states[-1][0:3])
- 
-
+        cube_sat_position = ECEF2ECI(result.x, t)
         #Assign the calculated position and append it to the list of determined positions
         self.position = cube_sat_position                  #Return the calculated GNSS Position
         self.positionEstimates.append(self.position)    #Append the calculated GNSS Position

@@ -62,8 +62,7 @@ class ADCS:
         if (self.satellite.state == IMAGING):
             self.determineUltraFineAttitude()
         elif (self.satellite.state == SAFE):
-            #self.determineCoarseAttitude()
-            self.determineUltraFineAttitude()
+            self.determineCoarseAttitude()
         else:
             self.determineCoarseAttitude()
 

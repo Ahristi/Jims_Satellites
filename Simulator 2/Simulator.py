@@ -237,6 +237,30 @@ class Simulator:
         ax2.set_xlabel("Longitude (deg)")
         ax2.set_ylabel("Latitude (deg)")
 
+    def showPositions(self):
+        print("Showing Positions:")
+        sat = self.satellites[12]  # Assuming you want to plot the positions of the first satellite
+        sat_positions = np.array(sat.GNSS.positionEstimates)  
+        x = sat_positions[:, 0]  # Extract X coordinates
+        y = sat_positions[:, 1]  # Extract Y coordinates
+        z = sat_positions[:, 2]  # Extract Z coordinates
+
+        # Create a 3D scatter plot
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(x, y, z, c='b', marker='o', label='Satellite Positions')
+
+        # Label the axes
+        ax.set_xlabel('X Label')
+        ax.set_ylabel('Y Label')
+        ax.set_zlabel('Z Label')
+
+        # Add a legend
+        ax.legend()
+
+        # Show the plot
+        plt.show()
+
 
     def calculateSunPos(self):
         """
@@ -286,11 +310,12 @@ if __name__ == "__main__":
     gs = groundStation(-32.9986, 148.2621, 415)
     print("Satellites created")
     sim = Simulator([sat1], [nav1,nav2,nav3,nav4], [gs])
-    sim.simulate(0,6*60*60,5, motionEquation)
+    sim.simulate(0,24*60*60,5, motionEquation)
     sim.showGroundTrack()
     sim.showOrbit() 
-    sim.showAttitudes()
-    sim.showCharges()
+    # sim.showAttitudes()
+    # sim.showCharges()
+    sim.showPositions()
 
 
 

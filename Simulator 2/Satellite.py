@@ -87,22 +87,22 @@ class Satellite:
         #Get the amount of time passed since last tick 
         h = self.times[-1] - self.times[-2]
 
-        #ADCS routines
-        self.setDesiredAttitude()
-        self.ADCS.determineAttitude()
-        self.ADCS.starTracker1.getReading(self.states[-1][0:3], self.attitude)
+        # #ADCS routines
+        # self.setDesiredAttitude()
+        # self.ADCS.determineAttitude()
+        # self.ADCS.starTracker1.getReading(self.states[-1][0:3], self.attitude)
 
         #Position routine
         self.GNSS.estimatePosition()
 
-        #Payload routines
+        # #Payload routines
         self.updateState()
-        self.payload.obtainPointing()
+        # self.payload.obtainPointing()
 
-        #Power routines
-        self.eclipses.append(self.checkEclipse()) #Check if eclipse is occuring
-        self.imaging.append(self.state==IMAGING)
-        self.EPS.calculateCharge(h)  #Calculate amount of charge in the battery
+        # #Power routines
+        # self.eclipses.append(self.checkEclipse()) #Check if eclipse is occuring
+        # self.imaging.append(self.state==IMAGING)
+        # self.EPS.calculateCharge(h)  #Calculate amount of charge in the battery
 
 
     def setDesiredAttitude(self):

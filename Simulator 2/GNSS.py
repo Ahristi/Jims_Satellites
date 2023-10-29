@@ -28,7 +28,7 @@ class GNSS:
     def __init__(self, sat):
         self.satellite = sat
         self.positionEstimates = []  #Array of the estimated positions as determined using RTK method
-        self.position          = []  #Calculated position
+        self.position          = []  #Calculated position for given time interval
         self.groundStations    = []  #Array of groundstation objects
         self.noise_level = 1e-10  # Noise associated with GNSS Satellite
 
@@ -103,18 +103,21 @@ class GNSS:
 
 
 
-        # # Determine GNSS Differential Correction based on the state
-        # # Check the state of the satellite
-        # if state == "IMAGING":
-        #     # Code to execute when the state is IMAGING (high precision differential GNSS)
-        #     # For example, you can calculate and store the estimated position
-        #     self.position = actualPosition
-        #     self.positionEstimates.append(self.position)
-        # elif state == "SAFE":
-        #     # Code to execute when the state is SAFE (lower precision regular GNSS)
-        #     # You can do something else here
-        #     pass  # Placeholder for SAFE state actions
+        # Determine GNSS Differential Correction based on the state
+        # Check the state of the satellite
+        if state == IMAGING:
+            # Code to execute when the state is IMAGING (high precision differential GNSS)
+            # For example, you can calculate and store the estimated position
+            print("\nIMAGING")
 
+        elif state == SAFE:
+            # Code to execute when the state is SAFE (lower precision regular GNSS)
+            # You can do something else here
+            # print("\nSAFE")
+            pass
+
+        elif state == READOUT:
+            print("\nREADOUT")
 
 
 

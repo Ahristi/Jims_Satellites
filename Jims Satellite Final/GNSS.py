@@ -75,6 +75,26 @@ class GNSS:
             noise = np.random.normal(scale=noise_level)
             noisy_time = time + noise
             return noisy_time
+            
+            # Define the weighting factors for each source of noise
+            # noise_weights = {
+            #     "Signal_arrival_CA": 3.0,
+            #     "Signal_arrival_PY": 0.3,
+            #     "Ionospheric": 5.0,
+            #     "Ephemeris_errors": 2.5,
+            #     "Satellite_clock_errors": 2.0,
+            #     "Multipath_distortion": 1.0,
+            #     "Tropospheric_effects": 0.5,
+            # }
+            
+            # # Calculate the noise level for the specified source
+            # noise_level = (total_noise_level * noise_weights[source_of_noise]) / sum(noise_weights.values())
+            
+            # # Apply noise based on the specified source
+            # noise = np.random.normal(scale=noise_level)
+            # noisy_time = time + noise
+            
+            # return noisy_time
 
         def calculate_pseudo_ranges_and_apply_noise(cube_satellite_position, gps_satellite_positions, noise_level):
 

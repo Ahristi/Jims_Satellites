@@ -142,50 +142,104 @@ class Simulator:
 
             NOTE: This only plots the first satellite attitudes at the moment        
         """
+        errors = []
+        rollError = []
+        pitchError = []
+        yawError = []
+        
+        #Calculate all the errors
+        sat = self.satellites[0]
+        allAttitudes = np.array(sat.attitudes)
+        estimatedAttitudes = np.array(sat.ADCS.estimatedAttitudes)
+        points = self.getStateTimes(sat.times,sat.imaging)
+        for actual,estimate in zip(allAttitudes, estimatedAttitudes):
+            Cactual   = directionalCosine(actual[0], actual[1], actual[2])
+            Cestimate = directionalCosine(estimate[0], estimate[1], estimate[2])
+            unit = np.array([1,1,1])
+            error = angleBetweenVectors(unit @ Cactual, unit @ Cestimate)
+            errors.append(np.deg2rad(error))
+            rollError.append(np.abs(actual[0] - estimate[0]))
+            pitchError.append(np.abs(actual[1] - estimate[1]))
+            yawError.append(np.abs(actual[2] - estimate[2]))
+
+
         sat = self.satellites[0]
         allAttitudes = np.array(sat.attitudes)
         estimatedAttitudes = np.array(sat.ADCS.estimatedAttitudes)
         points = self.getStateTimes(sat.times,sat.imaging)
 
-        # Create subplots with 3 rows and 1 column
-        fig, axes = plt.subplots(3, 1, figsize=(8, 10))
+        # Create subplots with 3 rows and 2 column
+        fig, axes = plt.subplots(3, 2, figsize=(8, 10))
 
         # Plot roll
-        axes[0].plot(sat.times, allAttitudes[:,0], color='blue')
-        axes[0].plot(sat.times, estimatedAttitudes[:,0], color='red')
-        axes[0].axvspan(points[0], points[1], color='orange', alpha=0.5, label = "Imaging")
-        axes[0].legend()
-        axes[0].set_title('Roll')
-        axes[0].set_xlabel('Time (s)')
-        axes[0].set_ylabel('Roll (Rad)')
+        axes[0][0].plot(sat.times, allAttitudes[:,0], color='blue')
+        axes[0][0].plot(sat.times, estimatedAttitudes[:,0], color='red')
+        axes[0][0].axvspan(points[0], points[1], color='orange', alpha=0.5, label = "Imaging")
+        axes[0][0].legend()
+        axes[0][0].set_title('Roll')
+        axes[0][0].set_xlabel('Time (s)')
+        axes[0][0].set_ylabel('Roll (Rad)')
 
+
+        axes[0][1].plot(sat.times, rollError, color='red')
+        axes[0][1].axvspan(points[0], points[1], color='orange', alpha=0.5, label = "Imaging")
+        axes[0][1].axhline(y=3.787364477e-5, color='b', linestyle='-', label = "Maximum allowable error")
+        axes[0][1].legend()
+        axes[0][1].set_title('Roll Error')
+        axes[0][1].set_xlabel('Time (s)')
+        axes[0][1].set_ylabel('Error (Rad)')
 
 
         # Plot pitch
-        axes[1].plot(sat.times, allAttitudes[:,1], color='blue')
-        axes[1].plot(sat.times, estimatedAttitudes[:,1], color='red')
-        axes[1].axvspan(points[0], points[1], color='orange', alpha=0.5, label = "Imaging")
-        axes[1].legend()  
-        axes[1].set_title('Pitch')
-        axes[1].set_xlabel('Time (s)')
-        axes[1].set_ylabel('Pitch (Rad)')
+        axes[1][0].plot(sat.times, allAttitudes[:,1], color='blue')
+        axes[1][0].plot(sat.times, estimatedAttitudes[:,1], color='red')
+        axes[1][0].axvspan(points[0], points[1], color='orange', alpha=0.5, label = "Imaging")
+        axes[1][0].legend()  
+        axes[1][0].set_title('Pitch')
+        axes[1][0].set_xlabel('Time (s)')
+        axes[1][0].set_ylabel('Pitch (Rad)')
      
+        axes[1][1].plot(sat.times, pitchError, color='red')
+        axes[1][1].axvspan(points[0], points[1], color='orange', alpha=0.5, label = "Imaging")
+        axes[1][1].axhline(y=3.787364477e-5, color='b', linestyle='-', label = "Maximum allowable error")
+        axes[1][1].legend()
+        axes[1][1].set_title('Pitch Error')
+        axes[1][1].set_xlabel('Time (s)')
+        axes[1][1].set_ylabel('Error (Rad)')
 
         # Plot yaw
-        axes[2].plot(sat.times, allAttitudes[:,2], color='blue')
-        axes[2].plot(sat.times, estimatedAttitudes[:,2], color='red')
-        axes[2].axvspan(points[0], points[1], color='orange', alpha=0.5, label = "Imaging")
-        axes[2].legend()     
-        axes[2].set_title('Yaw')
-        axes[2].set_xlabel('Time (s)')
-        axes[2].set_ylabel('Yaw (Rad)')
-    
+        axes[2][0].plot(sat.times, allAttitudes[:,2], color='blue')
+        axes[2][0].plot(sat.times, estimatedAttitudes[:,2], color='red')
+        axes[2][0].axvspan(points[0], points[1], color='orange', alpha=0.5, label = "Imaging")
+        axes[2][0].legend()     
+        axes[2][0].set_title('Yaw')
+        axes[2][0].set_xlabel('Time (s)')
+        axes[2][0].set_ylabel('Yaw (Rad)')
 
-        # Adjust spacing between the subplots
+        axes[2][1].plot(sat.times, yawError, color='red')
+        axes[2][1].axvspan(points[0], points[1], color='orange', alpha=0.5, label = "Imaging")
+        axes[2][1].axhline(y=3.787364477e-5, color='b', linestyle='-', label = "Maximum allowable error")
+        axes[2][1].legend()
+        axes[2][1].set_title('Yaw Error')
+        axes[2][1].set_xlabel('Time (s)')
+        axes[2][1].set_ylabel('Error (Rad)')
+
+        
+        fig2, ax = plt.subplots()
+        ax.plot(sat.times, errors, color='r')
+        ax.axvspan(points[0], points[1], color='orange', alpha=0.5, label = "Imaging")
+        ax.axhline(y=3.787364477e-5, color='b', linestyle='-', label = "Maximum allowable error")
+        ax.legend()
+        ax.set_title('Total Attitude Error')
+        ax.set_xlabel('Time (s)')
+        ax.set_ylabel('Error (Rad)')
+
+
         plt.tight_layout()
-
         # Display the plots
         plt.show()
+
+
 
     def showCharges(self):
         """
@@ -365,12 +419,12 @@ if __name__ == "__main__":
     gs = groundStation(-32.9986, 148.2621, 415)
     print("Satellites created")
     sim = Simulator([sat1], [nav1,nav2,nav3,nav4], [gs])
-    sim.simulate(0,6*60*60,5, motionEquation)
-    sim.showPositions()
-    sim.showGroundTrack()
-    sim.showOrbit() 
+    sim.simulate(0,6*60*60,10, motionEquation)
+    #sim.showPositions()
+    #sim.showGroundTrack()
+    #sim.showOrbit() 
     sim.showAttitudes()
-    sim.showCharges()
+    #sim.showCharges()
 
 
 

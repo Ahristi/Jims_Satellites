@@ -11,6 +11,10 @@ from matplotlib import pyplot as plt
 from Satellite import *
 from Simulator import *
 from surveyArea import surveyArea
+from mapping_heatmap import mappingHeatmap
+from true_mapping_error import trueMappingError
+
+
 service_account = "jims-948@jimssatellites.iam.gserviceaccount.com"
 key_path = 'jimssatellites-25b0240d5cf2.json'
 credentials = ee.ServiceAccountCredentials(service_account, key_path)
@@ -31,10 +35,6 @@ while (mode != "full_sim" and mode != "short_sim"):
 if (mode == "full_sim"):
     while (numSats < 1 or numSats > 12):
         numSats = int(input("Enter number of satellites between 1 and 12: "))
-
-
-
-
 
 if (mode == "full_sim"):
     print("Generating Satellites...")
@@ -61,7 +61,7 @@ if (mode == "full_sim"):
     sim.showCharges()
     mappingArray = []
     for sat in sim.satellites:
-        csv_file = "RESULTS_"+sat.name
+        csv_file = "bounding/RESULTS_"+sat.name
         with open(csv_file, mode='w', newline='') as file:
             writer = csv.writer(file)  
             i = 0      
@@ -74,15 +74,20 @@ if (mode == "full_sim"):
                 coord2.reverse()
                 coord3.reverse()
                 coord4.reverse()
-
                 data = [coord1[0], coord1[1],  coord4[0], coord4[1], sat.payload.mappingErrors[i]]
-            
                 writer.writerow(data)
                 roi = ee.Geometry.Rectangle([[coord1[0], coord1[1]],  [coord4[0], coord4[1]]])
                 newFeature = ee.Feature(roi, {'name': str(count)})
                 count = count+1
                 mappingArray.append(newFeature)
                 i+=1
+
+
+
+
+
+
+
 
 elif (mode == "short_sim"):
     count = 0
@@ -110,21 +115,43 @@ elif (mode == "short_sim"):
     sim.showOrbit() 
     sim.showAttitudes()
     sim.showCharges()
+    """
+        for sat in satellites:
+            csv_file = "bounding/RESULTS_"+sat.name+".csv"
+            count 
+            with open(csv_file, mode='r', newline='') as file:
+                reader = csv.reader(file)  
+                i = 0
+                for row in reader:
+                    coord1a, coord1b,  coord4a, coord4b, error = [float(param) for param in row]
+                    roi = ee.Geometry.Rectangle([[coord1a, coord1b],  [coord4a, coord4b]])
+                    newFeature = ee.Feature(roi, {'name': str(count)})
+                    count = count+1
+                    mappingArray.append(newFeature)
+                    count+=1
+    """
+    csv_file = "bounding/ALL_RESULTS.csv"
+    with open(csv_file, mode='r', newline='') as file:
+        reader = csv.reader(file)  
+        count = 0
+        for row in reader:
+            coord1a, coord1b,  coord4a, coord4b, error = [float(param) for param in row]
+            roi = ee.Geometry.Rectangle([[coord1a, coord1b],  [coord4a, coord4b]])
+            newFeature = ee.Feature(roi, {'name': str(count)})
+            count = count+1
+            mappingArray.append(newFeature)
+            count+=1
 
-    for sat in satellites:
-        csv_file = "bounding/RESULTS_"+sat.name+".csv"
-        count 
-        with open(csv_file, mode='r', newline='') as file:
-            reader = csv.reader(file)  
-            i = 0
-            for row in reader:
-                coord1a, coord1b,  coord4a, coord4b, error = [float(param) for param in row]
-                roi = ee.Geometry.Rectangle([[coord1a, coord1b],  [coord4a, coord4b]])
-                newFeature = ee.Feature(roi, {'name': str(count)})
-                count = count+1
-                mappingArray.append(newFeature)
-                count+=1
-# Create an interactive map
+
+#Show the mapping error
+mappingHeatmap()
+trueMappingError()
+
+
+
+
+# Use the simulated data to get information from Earth Engine
+
 Map = geemap.Map(center=[0, 0], zoom=2)
 mappedArea = ee.FeatureCollection(mappingArray)
 NSW = ee.Geometry.Rectangle([[144.81577841465915, -36.42295520530404], [155.81727106335805, -27.806830550620564]])
@@ -199,27 +226,10 @@ burnedAreaViz = burnedArea.visualize(**burnedVisParams)
 historic_mosaic = ee.ImageCollection([swir1_mosaic, burnedAreaViz, mask]).mosaic()
 
 
-def getDangerRating(ratio):
-    if ratio>= 0 and ratio<= 5:
-        return "MODERATE"
-    elif ratio>5 and ratio<= 15:
-        return "HIGH"
-    elif ratio>15 and ratio<25:
-        return "EXTREME"
-    else:
-        return "CATASTROPHIC"
 
-
-
-
+#With the geemap data, start surveying regions of interests for bushfire hazards
 current_directory = os.getcwd()
 out_dir = os.path.join(current_directory)
-
-surveyArea("Comleroy", mosaic, historic_mosaic, -33.38, -33.0931176, 150.78448429, 151.2087900435)
-surveyArea("Yaouk", mosaic, historic_mosaic,  -35.96021682698345, -35.71831894036284, 148.7428497953762, 149.0150704273652)
-surveyArea("Piliga", mosaic, historic_mosaic,  -31.069826237629815, -30.659188247907124, 148.99253089357404, 149.57756512477508)
-surveyArea("BlueMountains", mosaic, historic_mosaic,  -33.864175153202225,-33.527763870555276, 150.1730435186614, 150.74008344975258)
-
 # Read data from a CSV file
 with open('regions.csv', mode='r') as csv_file:
     csv_reader = csv.DictReader(csv_file)

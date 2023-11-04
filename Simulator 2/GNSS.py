@@ -30,7 +30,8 @@ class GNSS:
         self.positionEstimates = []  #Array of the estimated positions as determined using RTK method
         self.position          = []  #Calculated position for given time interval
         self.groundStations    = []  #Array of groundstation objects
-        self.noise_level = 1e-10  # Noise associated with GNSS Satellite
+        # self.noise_level = 3e-9  # Noise associated with GNSS Satellite
+        self.noise_level = 1e-10  # Noise associated with Differential GNSS Satellite
 
     def estimatePosition(self):
         gnssConstellation = self.satellite.gnssConstellation        #List of GNSS satellite objects
@@ -137,7 +138,11 @@ class GNSS:
         #Assign the calculated position and append it to the list of determined positions
         self.position = cube_sat_position                  #Return the calculated GNSS Position
         self.positionEstimates.append(self.position)    #Append the calculated GNSS Position
+        # print("calc positions: ", self.positionEstimates )
+        # print("True positions: ", actualPosition)
         #***********************************************************************
+
+    
 
 if __name__ == "__main__":
     print("Running GNSS test")

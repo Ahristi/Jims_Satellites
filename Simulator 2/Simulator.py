@@ -14,6 +14,9 @@ import pyvista as pv
 from pyvista import examples
 import matplotlib.pyplot as plt
 from matplotlib.image import imread
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+from matplotlib.colors import Normalize
 from tqdm import tqdm
 
 SUN_R = 149597870700 #1AU
@@ -237,44 +240,66 @@ class Simulator:
         ax2.set_xlabel("Longitude (deg)")
         ax2.set_ylabel("Latitude (deg)")
 
+
+
     def showPositions(self):
         print("Showing Positions:")
+
         sat = self.satellites[0]
-        sat_positions = np.array(sat.GNSS.positionEstimates)
-        true_values = sat.states  # Assuming the first three elements are XYZ positions
+        sat.states = sat.states[1:]
+        sat.states = [sub_array[:-3] for sub_array in sat.states]
 
-        # Initialize empty lists to store errors for each coordinate (X, Y, Z)
-        error_x_list = []
-        error_y_list = []
-        error_z_list = []
-        
-        for timestamp in range(len(sat_positions)):
-            # Calculate the error in X, Y, and Z coordinates for each position at the current timestamp
-            error_x = sat_positions[timestamp][0] - true_values[timestamp][0]
-            error_y = sat_positions[timestamp][1] - true_values[timestamp][1]
-            error_z = sat_positions[timestamp][2] - true_values[timestamp][2]
+        # Calculate the error in x, y, z for each timestamp
+        errors = []
+        for calc_pos, true_pos in zip(sat.GNSS.positionEstimates, sat.states):
+            error = [calc - true for calc, true in zip(calc_pos, true_pos)]
+            errors.append(error)
 
-            error_x_list.append(error_x)
-            error_y_list.append(error_y)
-            error_z_list.append(error_z)
+        # Calculate the magnitude of errors
+        error_magnitude = [((ex**2 + ey**2 + ez**2)**0.5) for ex, ey, ez in errors]
 
-            
-        print("Error test z: ", sat_positions[0][0], true_values[0][0])
-        print("Error test y: ", sat_positions[0][1], true_values[0][1])
-        print("Error test z: ", sat_positions[0][2], true_values[0][2])
-        # Create a 3D scatter plot for individual errors in X, Y, and Z coordinates
+        # Convert the list of errors into separate lists for x, y, and z
+        errors_x, errors_y, errors_z = zip(*errors)
+
+        # Create a 3D plot of the combined error
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        
-        ax.scatter(error_x_list, error_y_list, error_z_list, c='b', marker='o', label='Error in X, Y, Z')
-        
-        ax.set_xlabel('Error in X')
-        ax.set_ylabel('Error in Y')
-        ax.set_zlabel('Error in Z')
-        ax.set_title('Individual Errors in X, Y, Z Coordinates')
-        
-        plt.legend()
+
+        # Set the same axis scaling for all three axes
+        max_error = max(max(errors_x), max(errors_y), max(errors_z))
+        ax.set_xlim([-max_error, max_error])
+        ax.set_ylim([-max_error, max_error])
+        ax.set_zlim([-max_error, max_error])
+
+        # Create a color map for the errors based on their magnitude
+        norm = Normalize(vmin=0, vmax=max(error_magnitude))
+        colormap = cm.viridis
+
+        # Create a ScalarMappable to map the error magnitude to colors
+        sm = cm.ScalarMappable(cmap=colormap, norm=norm)
+        sm.set_array([])
+
+        # Plot the scatter points with colors based on error magnitude
+        sc = ax.scatter(errors_x, errors_y, errors_z, c=error_magnitude, cmap=colormap, norm=norm)
+        fig.colorbar(sm, label='Error Magnitude')
+
+        ax.set_xlabel('X Error (m)')
+        ax.set_ylabel('Y Error (m)')
+        ax.set_zlabel('Z Error (m)')
+
+        # Set the title
+        # ax.set_title('3D Position Error (Regular)')
+        ax.set_title('3D Position Error (Differential)')
+
         plt.show()
+
+        # print("Calc positions: ", sat.GNSS.positionEstimates)
+        # print("True Positions: ", sat.states)
+
+
+        
+        
+
     def calculateSunPos(self):
         """
             Calculates the position of the sun in ECI 
@@ -323,7 +348,7 @@ if __name__ == "__main__":
     gs = groundStation(-32.9986, 148.2621, 415)
     print("Satellites created")
     sim = Simulator([sat1], [nav1,nav2,nav3,nav4], [gs])
-    sim.simulate(0,2*60*60,5, motionEquation)
+    sim.simulate(0,0.5*60*60,5, motionEquation)
     sim.showGroundTrack()
     sim.showOrbit() 
     # sim.showAttitudes()

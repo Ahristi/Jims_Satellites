@@ -203,5 +203,5 @@ def orbitfromTLE(TLEfile):
     return inclination, rightAscension, eccentricity, argumentPerigee,meanAnomaly, meanMotion, tSinceVernal
 
 
-if __name__ == "__main__":
-    sat = Satellite("ISS.txt", "ISS")
+# if __name__ == "__main__":
+#     sat = Satellite("ISS.txt", "ISS")
